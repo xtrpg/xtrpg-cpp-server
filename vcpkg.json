@@ -1,0 +1,13 @@
+{
+	"name": "xtrpg-cpp-server",
+	"version-string": "0.1.0",
+	"dependencies": [
+		"asio",
+		"openssl",
+		"pugixml",
+		{
+			"name": "sqlite3",
+			"platform": "windows | linux | osx"
+		}
+	]
+}

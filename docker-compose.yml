@@ -1,0 +1,18 @@
+version: '3.8'
+
+services:
+  xtrpg-cpp-server:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        ENABLE_C2S: "ON"
+        ENABLE_S2S: "ON"
+        ENABLE_STORAGE_SQLITE: "ON"
+    ports:
+      - "5222:5222"   # C2S Port
+      - "5269:5269"   # S2S Port
+    volumes:
+      # Optional mount point for persistent database/storage files
+      - ./data:/app/data
+    restart: unless-stopped
