@@ -31,7 +31,7 @@ public:
   /**
    * Static JID factory method that returns a pointer to a new JID instance.
    */
-  static Jid *parse(std::string_view jidStr);
+  static std::optional<Jid> parse(std::string_view jidStr);
 
   /**
    * Returns the node/local part of the JID.

@@ -44,15 +44,14 @@ Jid::Jid(std::string_view node, std::string_view domain,
 /**
  * Static JID factory method.
  */
-Jid *Jid::parse(std::string_view jidStr) {
-  Jid *ptrJid = new Jid(jidStr);
+std::optional<Jid> Jid::parse(std::string_view jidStr) {
+  Jid jid(jidStr);
 
-  if (ptrJid->isValid()) {
-    return ptrJid;
+  if (jid.isValid()) {
+    return jid;
   }
 
-  delete ptrJid;
-  return nullptr;
+  return std::nullopt;
 }
 
 /**
