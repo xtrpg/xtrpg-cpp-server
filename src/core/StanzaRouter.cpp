@@ -21,7 +21,6 @@ void StanzaRouter::start() {
   if (this->isWorkerRunning)
     return;
 
-  std::cout << "Starting Worker Loop" << std::endl;
   this->isWorkerRunning = true;
   workerThread = std::thread(&StanzaRouter::workerLoop, this);
 }
@@ -33,7 +32,6 @@ void StanzaRouter::stop() {
   if (!this->isWorkerRunning)
     return;
 
-  std::cout << "Stopping Worker Loop" << std::endl;
   {
     std::lock_guard lock(this->stanzaQueueMutex);
     this->isWorkerRunning = false;
@@ -61,7 +59,6 @@ void StanzaRouter::postStanza(StanzaContext ctx) {
  * Work loop for the child thread.
  */
 void StanzaRouter::workerLoop() {
-  std::cout << "Worker Loop Starting" << std::endl;
   while (this->isWorkerRunning) {
     StanzaContext ctx;
 
