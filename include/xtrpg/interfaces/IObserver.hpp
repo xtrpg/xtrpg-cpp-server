@@ -13,6 +13,6 @@ public:
   virtual bool canObserve(const TContext &ctx) const = 0;
 
   // Generic handler callback
-  virtual bool observe(TContext &ctx) = 0;
+  virtual void observe(TContext &ctx) = 0;
 };
 } // namespace xtrpg
