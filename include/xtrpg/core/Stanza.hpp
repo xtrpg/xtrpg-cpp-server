@@ -52,9 +52,9 @@ protected:
   void writeCommonAttributes(std::ostream &os) const {
     if (!this->_id.empty())
       os << " id='" << this->_id << "'";
-    if (!this->_to.isValid())
+    if (this->_to.isValid())
       os << " to='" << this->_to << "'";
-    if (!this->_from.isValid())
+    if (this->_from.isValid())
       os << " from='" << this->_from << "'";
   }
 
