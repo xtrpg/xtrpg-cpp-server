@@ -9,7 +9,7 @@ namespace xtrpg {
 namespace core {
 
 struct JidParts {
-  std::string local;    // e.g., "alice"
+  std::string node;     // e.g., "alice"
   std::string domain;   // e.g., "example.com" (lowercased)
   std::string resource; // e.g., "mobile"
 };
@@ -29,7 +29,7 @@ public:
   /**
    * Constructor that takes in the individual parts to form a JID.
    */
-  Jid(std::string_view localpart, std::string_view domainpart,
+  Jid(std::string_view nodepart, std::string_view domainpart,
       std::string_view resourcepart = "");
 
   /**
@@ -38,7 +38,7 @@ public:
   static std::optional<Jid> parse(std::string_view jidStr);
 
   // Getters for JID Components (RFC 7622)
-  const std::string &localpart() const { return this->jidParts.local; }
+  const std::string &node() const { return this->jidParts.node; }
   const std::string &domain() const { return this->jidParts.domain; }
   const std::string &resource() const { return this->jidParts.resource; }
 
@@ -51,7 +51,7 @@ public:
   bool isFull() const { return !jidParts.resource.empty(); }
   bool isValid() const { return !jidParts.domain.empty(); }
   bool isDomainOnly() const {
-    return jidParts.local.empty() && !jidParts.domain.empty();
+    return jidParts.node.empty() && !jidParts.domain.empty();
   }
 
   // Comparison Operators (Crucial for std::unordered_map / StanzaRouter

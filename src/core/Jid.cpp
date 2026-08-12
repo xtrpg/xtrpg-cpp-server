@@ -2,8 +2,6 @@
 #include <algorithm>
 #include <cctype>
 
-namespace xmpp {
-
 xtrpg::core::Jid::Jid(std::string_view fullJid) {
   if (fullJid.empty())
     return;
@@ -19,7 +17,7 @@ xtrpg::core::Jid::Jid(std::string_view fullJid) {
   // 2. Extract localpart and domainpart from barePart
   size_t atPos = barePart.find('@');
   if (atPos != std::string_view::npos) {
-    this->jidParts.local = normalize(barePart.substr(0, atPos));
+    this->jidParts.node = normalize(barePart.substr(0, atPos));
     this->jidParts.domain = normalize(barePart.substr(atPos + 1));
   } else {
     // Domain-only JID (e.g. "conference.example.com")
@@ -29,9 +27,9 @@ xtrpg::core::Jid::Jid(std::string_view fullJid) {
   rebuildCache();
 }
 
-xtrpg::core::Jid::Jid(std::string_view localpart, std::string_view domainpart,
+xtrpg::core::Jid::Jid(std::string_view nodepart, std::string_view domainpart,
                       std::string_view resourcepart) {
-  this->jidParts.local = normalize(localpart);
+  this->jidParts.node = normalize(nodepart);
   this->jidParts.domain = normalize(domainpart);
   this->jidParts.resource = resourcepart;
   rebuildCache();
@@ -47,9 +45,9 @@ xtrpg::core::Jid::parse(std::string_view jidStr) {
 }
 
 std::string xtrpg::core::Jid::bare() const {
-  if (this->jidParts.local.empty())
+  if (this->jidParts.node.empty())
     return this->jidParts.domain;
-  return this->jidParts.local + "@" + this->jidParts.domain;
+  return this->jidParts.node + "@" + this->jidParts.domain;
 }
 
 void xtrpg::core::Jid::rebuildCache() {
@@ -58,11 +56,11 @@ void xtrpg::core::Jid::rebuildCache() {
     return;
   }
 
-  this->fullJid.reserve(this->jidParts.local.size() +
+  this->fullJid.reserve(this->jidParts.node.size() +
                         this->jidParts.domain.size() +
                         this->jidParts.resource.size() + 2);
-  if (!this->jidParts.local.empty()) {
-    this->fullJid.append(this->jidParts.local).append("@");
+  if (!this->jidParts.node.empty()) {
+    this->fullJid.append(this->jidParts.node).append("@");
   }
   this->fullJid.append(this->jidParts.domain);
   if (!this->jidParts.resource.empty()) {
@@ -78,5 +76,3 @@ std::string xtrpg::core::Jid::normalize(std::string_view str) {
                  [](unsigned char c) { return std::tolower(c); });
   return out;
 }
-
-} // namespace xmpp
