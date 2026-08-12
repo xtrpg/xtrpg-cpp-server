@@ -1,8 +1,13 @@
 #pragma once
+#include "xtrpg/core/Jid.hpp"
+#include "xtrpg/core/Stanza.hpp"
 #include "xtrpg/core/StanzaDirection.hpp"
-// #include "xmpp/stanza/Stanza.hpp"
 #include <memory>
 #include <string>
+
+using xtrpg::core::Jid;
+using xtrpg::core::Stanza;
+using xtrpg::core::StanzaDirection;
 
 namespace xtrpg {
 namespace core {
@@ -10,18 +15,19 @@ namespace core {
 class IConnectionSession; // Forward declaration
 
 struct StanzaContext {
-  // 1. The Core Stanza Payload
+  // The Core Stanza Payload
   std::shared_ptr<Stanza> stanza{nullptr};
 
-  // 2. Sender Identity Metadata
-  std::string senderBareJid; // e.g. "alice@example.com"
-  std::string senderFullJid; // e.g. "alice@example.com/mobile"
+  // Sender Identity Metadata
+  Jid getSender() { return this->stanza->from(); }
 
-  // 3. Routing Direction & Flags
-  xtrpg::core::StanzaDirection direction{xtrpg::core::StanzaDirection::Inbound};
-  bool handled{false}; // Set to true when a consumer handles the stanza
+  // Routing Direction & Flags
+  StanzaDirection direction{StanzaDirection::Inbound};
 
-  // 4. Source Session Reference
+  // Set to true when a consumer handles the stanza
+  bool handled{false};
+
+  // Source Session Reference
   // Weak reference to the session that received this stanza.
   // Allows modules/consumers to send direct responses back without circular
   // std::shared_ptr references.
