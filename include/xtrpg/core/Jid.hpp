@@ -8,12 +8,6 @@
 namespace xtrpg {
 namespace core {
 
-struct JidParts {
-  std::string node;     // e.g., "alice"
-  std::string domain;   // e.g., "example.com" (lowercased)
-  std::string resource; // e.g., "mobile"
-};
-
 class Jid {
 public:
   /**
@@ -29,54 +23,59 @@ public:
   /**
    * Constructor that takes in the individual parts to form a JID.
    */
-  Jid(std::string_view nodepart, std::string_view domainpart,
-      std::string_view resourcepart = "");
+  Jid(std::string_view node, std::string_view domain,
+      std::string_view resource = "");
 
   /**
-   * Static JID facotry method.
+   * Static JID factory method.
    */
   static std::optional<Jid> parse(std::string_view jidStr);
 
   // Getters for JID Components (RFC 7622)
-  const std::string &node() const { return this->jidParts.node; }
-  const std::string &domain() const { return this->jidParts.domain; }
-  const std::string &resource() const { return this->jidParts.resource; }
+  const std::string &node() const { return this->_node; }
+  const std::string &domain() const { return this->_domain; }
+  const std::string &resource() const { return this->_resource; }
 
   // Derived Forms
-  std::string bare() const;                           // "user@domain"
-  const std::string &full() const { return fullJid; } // "user@domain/resource"
+  std::string bare() const; // "user@domain"
+  const std::string &str() const {
+    return this->_fullJid;
+  } // "user@domain/resource"
 
   // Helper Predicates
-  bool isBare() const { return jidParts.resource.empty(); }
-  bool isFull() const { return !jidParts.resource.empty(); }
-  bool isValid() const { return !jidParts.domain.empty(); }
+  bool isBare() const { return this->_resource.empty(); }
+  bool isFull() const { return !this->_resource.empty(); }
+  bool isValid() const { return !this->_domain.empty(); }
   bool isDomainOnly() const {
-    return jidParts.node.empty() && !jidParts.domain.empty();
+    return this->_node.empty() && !this->_domain.empty();
   }
 
   // Comparison Operators (Crucial for std::unordered_map / StanzaRouter
   // lookups)
   bool operator==(const Jid &other) const {
-    return this->fullJid == other.fullJid;
+    return this->_fullJid == other._fullJid;
   }
   bool operator!=(const Jid &other) const {
-    return this->fullJid != other.fullJid;
+    return this->_fullJid != other._fullJid;
   }
   bool operator<(const Jid &other) const {
-    return this->fullJid < other.fullJid;
+    return this->_fullJid < other._fullJid;
   }
 
   // Stream Output Serialization
   friend std::ostream &operator<<(std::ostream &os, const Jid &jid) {
-    return os << jid.fullJid;
+    return os << jid._fullJid;
   }
 
 private:
   void rebuildCache();
   static std::string normalize(std::string_view str);
 
-  JidParts jidParts;
-  std::string fullJid; // Pre-built full JID string string for zero-copy lookups
+  std::string _node;     // e.g., "alice"
+  std::string _domain;   // e.g., "example.com" (lowercased)
+  std::string _resource; // e.g., "mobile"
+  std::string
+      _fullJid; // Pre-built full JID string string for zero-copy lookups
 };
 
 } // namespace core
@@ -87,7 +86,7 @@ private:
 namespace std {
 template <> struct hash<xtrpg::core::Jid> {
   size_t operator()(const xtrpg::core::Jid &jid) const noexcept {
-    return std::hash<std::string>{}(jid.full());
+    return std::hash<std::string>{}(jid.str());
   }
 };
 } // namespace std

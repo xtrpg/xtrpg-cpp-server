@@ -2,41 +2,49 @@
 #include <algorithm>
 #include <cctype>
 
-xtrpg::core::Jid::Jid(std::string_view fullJid) {
+using xtrpg::core::Jid;
+
+/**
+ * Constructor that takes in and parsed a JID from a string.
+ */
+Jid::Jid(std::string_view fullJid) {
   if (fullJid.empty())
     return;
 
-  // 1. Extract resourcepart (everything after first '/')
+  // Extract resource part (everything after first '/')
   size_t slashPos = fullJid.find('/');
   std::string_view barePart = fullJid;
   if (slashPos != std::string_view::npos) {
-    this->jidParts.resource = std::string(fullJid.substr(slashPos + 1));
+    this->_resource = std::string(fullJid.substr(slashPos + 1));
     barePart = fullJid.substr(0, slashPos);
   }
 
-  // 2. Extract localpart and domainpart from barePart
+  // Extract node part and domain part from bare Part
   size_t atPos = barePart.find('@');
   if (atPos != std::string_view::npos) {
-    this->jidParts.node = normalize(barePart.substr(0, atPos));
-    this->jidParts.domain = normalize(barePart.substr(atPos + 1));
+    this->_node = normalize(barePart.substr(0, atPos));
+    this->_domain = normalize(barePart.substr(atPos + 1));
   } else {
     // Domain-only JID (e.g. "conference.example.com")
-    this->jidParts.domain = normalize(barePart);
+    this->_domain = normalize(barePart);
   }
 
   rebuildCache();
 }
 
-xtrpg::core::Jid::Jid(std::string_view nodepart, std::string_view domainpart,
-                      std::string_view resourcepart) {
-  this->jidParts.node = normalize(nodepart);
-  this->jidParts.domain = normalize(domainpart);
-  this->jidParts.resource = resourcepart;
+/**
+ * Constructor that takes in the individual parts to form a JID.
+ */
+Jid::Jid(std::string_view node, std::string_view domain,
+         std::string_view resource)
+    : _node(normalize(node)), _domain(normalize(domain)), _resource(resource) {
   rebuildCache();
 }
 
-std::optional<xtrpg::core::Jid>
-xtrpg::core::Jid::parse(std::string_view jidStr) {
+/**
+ * Static JID factory method.
+ */
+std::optional<xtrpg::core::Jid> Jid::parse(std::string_view jidStr) {
   Jid jid(jidStr);
   if (jid.isValid()) {
     return jid;
@@ -44,31 +52,39 @@ xtrpg::core::Jid::parse(std::string_view jidStr) {
   return std::nullopt;
 }
 
-std::string xtrpg::core::Jid::bare() const {
-  if (this->jidParts.node.empty())
-    return this->jidParts.domain;
-  return this->jidParts.node + "@" + this->jidParts.domain;
+/**
+ * Returns a derived JID string, excluding the resource part.
+ */
+std::string Jid::bare() const {
+  if (this->_node.empty())
+    return this->_domain;
+  return this->_node + "@" + this->_domain;
 }
 
-void xtrpg::core::Jid::rebuildCache() {
-  if (this->jidParts.domain.empty()) {
-    this->fullJid.clear();
+/**
+ * Rebuilds the cache for the full JID string.
+ */
+void Jid::rebuildCache() {
+  if (this->_domain.empty()) {
+    this->_fullJid.clear();
     return;
   }
 
-  this->fullJid.reserve(this->jidParts.node.size() +
-                        this->jidParts.domain.size() +
-                        this->jidParts.resource.size() + 2);
-  if (!this->jidParts.node.empty()) {
-    this->fullJid.append(this->jidParts.node).append("@");
+  this->_fullJid.reserve(this->_node.size() + this->_domain.size() +
+                         this->_resource.size() + 2);
+  if (!this->_node.empty()) {
+    this->_fullJid.append(this->_node).append("@");
   }
-  this->fullJid.append(this->jidParts.domain);
-  if (!this->jidParts.resource.empty()) {
-    this->fullJid.append("/").append(this->jidParts.resource);
+  this->_fullJid.append(this->_domain);
+  if (!this->_resource.empty()) {
+    this->_fullJid.append("/").append(this->_resource);
   }
 }
 
-std::string xtrpg::core::Jid::normalize(std::string_view str) {
+/**
+ * Normalizes a given string.
+ */
+std::string Jid::normalize(std::string_view str) {
   std::string out(str);
   // Lowercase normalization for domain & localpart per RFC 7622 PRECIS
   // stringprep
