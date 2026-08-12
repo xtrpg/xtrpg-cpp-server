@@ -10,9 +10,6 @@ namespace core {
 
 class Jid {
 public:
-  /**
-   * Default constructor that generates a blank JID.
-   */
   Jid() = default;
 
   /**
@@ -22,25 +19,44 @@ public:
 
   /**
    * Constructor that takes in the individual parts to form a JID.
+   *
+   * @param[in] node the node/local part of the JID.
+   * @param[in] domain the domain part of the JID.
+   * @param[in] resource optional resource part of the JID. Default to a blank
+   * string if not provided.
    */
   Jid(std::string_view node, std::string_view domain,
       std::string_view resource = "");
 
   /**
-   * Static JID factory method.
+   * Static JID factory method that returns a pointer to a new JID instance.
    */
-  static std::optional<Jid> parse(std::string_view jidStr);
+  static Jid *parse(std::string_view jidStr);
 
-  // Getters for JID Components (RFC 7622)
+  /**
+   * Returns the node/local part of the JID.
+   */
   const std::string &node() const { return this->_node; }
+
+  /**
+   * Returns the domain part of the JID.
+   */
   const std::string &domain() const { return this->_domain; }
+
+  /**
+   * Returns the resource part of the JID.
+   */
   const std::string &resource() const { return this->_resource; }
 
-  // Derived Forms
-  std::string bare() const; // "user@domain"
-  const std::string &str() const {
-    return this->_fullJid;
-  } // "user@domain/resource"
+  /**
+   * Returns the JID in it's bare format (without the resource part).
+   */
+  std::string bare() const;
+
+  /**
+   * Returns the string representation of the full JID.
+   */
+  const std::string &str() const { return this->_fullJid; }
 
   // Helper Predicates
   bool isBare() const { return this->_resource.empty(); }
@@ -71,11 +87,36 @@ private:
   void rebuildCache();
   static std::string normalize(std::string_view str);
 
-  std::string _node;     // e.g., "alice"
-  std::string _domain;   // e.g., "example.com" (lowercased)
-  std::string _resource; // e.g., "mobile"
-  std::string
-      _fullJid; // Pre-built full JID string string for zero-copy lookups
+  /**
+   * The optional username or specific account name before the `@` symbol.
+   *
+   * In the example of `alice@example.com/mobile` the node/local part is
+   * "alice".
+   */
+  std::string _node;
+
+  /**
+   * The mandatory server address or domain name, located after the `@` and
+   * before and `/`.
+   *
+   * In the example of `alice@example.com/mobile` the domain part is
+   * "example.com".
+   */
+  std::string _domain;
+
+  /**
+   * The optional specifier after the `/` symbol used to identify a specific
+   * client connection or device, such as "mobile" or "desktop".
+   *
+   * In the example of `alice@example.com/mobile` the resource part is
+   * "mobile".
+   */
+  std::string _resource;
+
+  /**
+   * Pre-built full JID string string for zero-copy lookups.
+   */
+  std::string _fullJid;
 };
 
 } // namespace core

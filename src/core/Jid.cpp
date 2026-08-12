@@ -44,12 +44,15 @@ Jid::Jid(std::string_view node, std::string_view domain,
 /**
  * Static JID factory method.
  */
-std::optional<xtrpg::core::Jid> Jid::parse(std::string_view jidStr) {
-  Jid jid(jidStr);
-  if (jid.isValid()) {
-    return jid;
+Jid *Jid::parse(std::string_view jidStr) {
+  Jid *ptrJid = new Jid(jidStr);
+
+  if (ptrJid->isValid()) {
+    return ptrJid;
   }
-  return std::nullopt;
+
+  delete ptrJid;
+  return nullptr;
 }
 
 /**
