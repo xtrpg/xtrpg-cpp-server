@@ -1,5 +1,6 @@
 #pragma once
 
+#include "xtrpg/core/StanzaContext.hpp"
 #include "xtrpg/interfaces/IConsumer.hpp"
 #include "xtrpg/interfaces/IObserver.hpp"
 
@@ -11,6 +12,8 @@
 #include <shared_mutex>
 #include <thread>
 #include <vector>
+
+using xtrpg::core::StanzaContext;
 
 namespace xtrpg {
 namespace core {

@@ -1,16 +1,27 @@
 #include "xtrpg/core/StanzaRouter.hpp"
 #include <iostream>
 
-xtrpg::core::StanzaRouter::StanzaRouter() = default;
+using xtrpg::core::StanzaContext;
+using xtrpg::core::StanzaRouter;
 
-xtrpg::core::StanzaRouter::~StanzaRouter() { this->stop(); }
+/**
+ * Default Constructor.
+ */
+StanzaRouter::StanzaRouter() = default;
+
+/**
+ * Destructor.
+ */
+StanzaRouter::~StanzaRouter() { this->stop(); }
 
 /**
  * Starts the background worker on it's own thread.
  */
-void xtrpg::core::StanzaRouter::start() {
+void StanzaRouter::start() {
   if (this->isWorkerRunning)
     return;
+
+  std::cout << "Starting Worker Loop" << std::endl;
   this->isWorkerRunning = true;
   workerThread = std::thread(&StanzaRouter::workerLoop, this);
 }
@@ -18,10 +29,11 @@ void xtrpg::core::StanzaRouter::start() {
 /**
  * Stops the current running background worker.
  */
-void xtrpg::core::StanzaRouter::stop() {
+void StanzaRouter::stop() {
   if (!this->isWorkerRunning)
     return;
 
+  std::cout << "Stopping Worker Loop" << std::endl;
   {
     std::lock_guard lock(this->stanzaQueueMutex);
     this->isWorkerRunning = false;
@@ -36,7 +48,7 @@ void xtrpg::core::StanzaRouter::stop() {
 /**
  * Submits a new stanza to be queued for processing.
  */
-void xtrpg::core::StanzaRouter::postStanza(StanzaContext ctx) {
+void StanzaRouter::postStanza(StanzaContext ctx) {
   {
     std::lock_guard lock(this->stanzaQueueMutex);
     this->stanzaQueue.push(std::move(ctx));
@@ -48,7 +60,8 @@ void xtrpg::core::StanzaRouter::postStanza(StanzaContext ctx) {
 /**
  * Work loop for the child thread.
  */
-void xtrpg::core::StanzaRouter::workerLoop() {
+void StanzaRouter::workerLoop() {
+  std::cout << "Worker Loop Starting" << std::endl;
   while (this->isWorkerRunning) {
     StanzaContext ctx;
 
@@ -77,7 +90,7 @@ void xtrpg::core::StanzaRouter::workerLoop() {
 /**
  * Processes a single stanza.
  */
-void xtrpg::core::StanzaRouter::processStanza(StanzaContext &ctx) {
+void StanzaRouter::processStanza(StanzaContext &ctx) {
   std::shared_lock lock(this->stanzaProcessingMutex);
 
   // Run Observers
@@ -96,7 +109,7 @@ void xtrpg::core::StanzaRouter::processStanza(StanzaContext &ctx) {
   for (const auto &consumer : this->consumers) {
     if (consumer->canConsume(ctx)) {
       try {
-        if (consumer->consumeStanza(ctx)) {
+        if (consumer->consume(ctx)) {
           ctx.handled = true;
           return; // Stanza consumed! Short-circuit remaining consumers.
         }
@@ -108,13 +121,25 @@ void xtrpg::core::StanzaRouter::processStanza(StanzaContext &ctx) {
   }
 }
 
-void xtrpg::core::StanzaRouter::addConsumer(
+void StanzaRouter::addObserver(
+    std::shared_ptr<IObserver<StanzaContext>> observer) {
+  std::unique_lock lock(this->stanzaProcessingMutex);
+  this->observers.push_back(std::move(observer));
+}
+
+void StanzaRouter::removeObserver(
+    const std::shared_ptr<IObserver<StanzaContext>> &observer) {
+  std::unique_lock lock(this->stanzaProcessingMutex);
+  std::erase(this->observers, observer);
+}
+
+void StanzaRouter::addConsumer(
     std::shared_ptr<IConsumer<StanzaContext>> consumer) {
   std::unique_lock lock(this->stanzaProcessingMutex);
   this->consumers.push_back(std::move(consumer));
 }
 
-void xtrpg::core::StanzaRouter::removeConsumer(
+void StanzaRouter::removeConsumer(
     const std::shared_ptr<IConsumer<StanzaContext>> &consumer) {
   std::unique_lock lock(this->stanzaProcessingMutex);
   std::erase(this->consumers, consumer);
