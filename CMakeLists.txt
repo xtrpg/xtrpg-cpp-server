@@ -31,6 +31,11 @@ option(ENABLE_STORAGE_SQLITE "Include SQLite storage backend" OFF)
 option(ENABLE_STORAGE_POSTGRES "Include PostgreSQL storage backend" OFF)
 
 # Core Server Target
+add_library(xtrpg_core STATIC
+    src/core/Jid.cpp
+    src/core/StanzaRouter.cpp
+)
+target_include_directories(xtrpg_core PUBLIC include)
 
 # Link imported targets across platforms
 
@@ -52,7 +57,9 @@ endif()
 
 # Executable Target
 add_executable(xtrpg_cpp_server apps/main.cpp)
+target_link_libraries(xtrpg_cpp_server PRIVATE xtrpg_core)
 
 # If modules produce targets registered via xmpp_register_user_module
 if(USER_MODULE_TARGETS)
+    target_link_libraries(xtrpg_cpp_server PRIVATE ${USER_MODULE_TARGETS})
 endif()
