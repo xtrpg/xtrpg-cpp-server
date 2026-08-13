@@ -15,8 +15,7 @@
 
 using xtrpg::core::StanzaContext;
 
-namespace xtrpg {
-namespace core {
+namespace xtrpg::core {
 
 class StanzaRouter {
 public:
@@ -68,5 +67,4 @@ private:
   std::vector<std::shared_ptr<IConsumer<StanzaContext>>> consumers;
 };
 
-} // namespace core
-} // namespace xtrpg
+} // namespace xtrpg::core

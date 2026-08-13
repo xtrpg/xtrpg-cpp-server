@@ -5,8 +5,7 @@
 #include <string>
 #include <string_view>
 
-namespace xtrpg {
-namespace core {
+namespace xtrpg::core {
 
 class Jid {
 public:
@@ -119,8 +118,7 @@ private:
   std::string _fullJid;
 };
 
-} // namespace core
-} // namespace xtrpg
+} // namespace xtrpg::core
 
 // Custom std::hash specialization so Jid can be used as key in
 // std::unordered_map

@@ -1,7 +1,6 @@
 #pragma once
 
-namespace xtrpg {
-namespace core {
+namespace xtrpg::core {
 enum class StanzaDirection {
   /**
    * Received from a local C2S client or remote S2S domain
@@ -13,5 +12,5 @@ enum class StanzaDirection {
    */
   Outbound
 };
-} // namespace core
-} // namespace xtrpg
+
+} // namespace xtrpg::core

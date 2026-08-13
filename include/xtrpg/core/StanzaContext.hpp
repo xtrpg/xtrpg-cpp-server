@@ -9,8 +9,7 @@ using xtrpg::core::Jid;
 using xtrpg::core::Stanza;
 using xtrpg::core::StanzaDirection;
 
-namespace xtrpg {
-namespace core {
+namespace xtrpg::core {
 
 class IConnectionSession; // Forward declaration
 
@@ -34,5 +33,4 @@ struct StanzaContext {
   std::weak_ptr<IConnectionSession> sourceSession;
 };
 
-} // namespace core
-} // namespace xtrpg
+} // namespace xtrpg::core

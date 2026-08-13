@@ -10,8 +10,7 @@
 using xtrpg::core::Jid;
 using xtrpg::core::StanzaCategory;
 
-namespace xtrpg {
-namespace core {
+namespace xtrpg::core {
 
 class Stanza {
 public:
@@ -65,5 +64,4 @@ private:
   std::string _id;
 };
 
-} // namespace core
-} // namespace xtrpg
+} // namespace xtrpg::core

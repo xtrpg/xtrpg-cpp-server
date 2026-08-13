@@ -1,7 +1,6 @@
 #pragma once
 
-namespace xtrpg {
-namespace core {
+namespace xtrpg::core {
 enum class StanzaCategory {
   /**
    * A request-response (or query-result) mechanism functioning similarly to
@@ -22,5 +21,4 @@ enum class StanzaCategory {
    */
   Presence
 };
-} // namespace core
-} // namespace xtrpg
+} // namespace xtrpg::core
