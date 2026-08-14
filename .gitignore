@@ -64,6 +64,10 @@ vcpkg_installed/
 # debug information files
 *.dwo
 
+# SSL certs
+*.crt
+*.key
+
 # test output & cache
 Testing/
 .cache/
