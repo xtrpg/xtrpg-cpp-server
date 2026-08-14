@@ -28,7 +28,7 @@ public:
   /**
    * Sets an attribute key/value pair.
    */
-  void attribute(std::string key, std::string value) {
+  virtual void attribute(std::string key, std::string value) {
     this->_attributes[std::move(key)] = std::move(value);
   }
 
