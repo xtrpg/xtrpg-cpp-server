@@ -56,7 +56,6 @@ export VCPKG_ROOT="$HOME/vcpkg"
 
 ---
 
-### 3. Building the Project
 
 Since the project uses `vcpkg.json`, dependencies will automatically download and build during the initial CMake setup.
 
@@ -73,8 +72,7 @@ Pass the `vcpkg` toolchain file during configuration:
 
 * **Windows (PowerShell):**
   ```powershell
-  cmake -B build -S . `
-    -DCMAKE_TOOLCHAIN_FILE="$env:VCPKG_ROOT/scripts/buildsystems/vcpkg.cmake"
+  cmake -B build -S . -DCMAKE_TOOLCHAIN_FILE="$env:VCPKG_ROOT/scripts/buildsystems/vcpkg.cmake"
   ```
 
 #### **Step B: Compile the Binary**
