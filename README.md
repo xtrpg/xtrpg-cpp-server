@@ -56,6 +56,20 @@ export VCPKG_ROOT="$HOME/vcpkg"
 
 ---
 
+### 3. Generate Self-Signed SSL Certificates
+
+```bash
+# WINDOWS
+openssl req -x509 -newkey rsa:2048 -keyout server.key -out server.crt -days 365 -nodes -subj "/CN=localhost"
+
+# LINUX/MACOS
+openssl req -x509 -newkey rsa:2048 -keyout server.key -out server.crt -days 365 -nodes -subj "//CN=localhost"
+```
+
+
+---
+
+### 4. Building the Project
 
 Since the project uses `vcpkg.json`, dependencies will automatically download and build during the initial CMake setup.
 
