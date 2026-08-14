@@ -1,24 +1,24 @@
 #pragma once
 
-#include "xtrpg/xml/INode.hpp"
-#include "xtrpg/xml/NodeType.hpp"
+#include "xtrpg/xml/IXmlNode.hpp"
+#include "xtrpg/xml/XmlNodeType.hpp"
 #include <string>
 
 namespace xtrpg::xml {
 
-class TextNode : public INode {
+class XmlTextNode : public IXmlNode {
 public:
   /**
    * Default constructor that generate a blank text node.
    */
-  TextNode() : INode(NodeType::TEXT) {}
+  XmlTextNode() : IXmlNode(XmlNodeType::TEXT) {}
 
   /**
    * Constructor that takes in a copy of the text content to store within this
    * node.
    */
-  explicit TextNode(std::string content)
-      : INode(NodeType::TEXT), _content(std::move(content)) {}
+  explicit XmlTextNode(std::string content)
+      : IXmlNode(XmlNodeType::TEXT), _content(std::move(content)) {}
 
   /**
    * Returns a reference to the text content stored on this node.
@@ -73,7 +73,7 @@ private:
 /**
  * Stream insertion overload. (node << text).
  */
-inline TextNode &operator<<(TextNode &node, const std::string &withText) {
+inline XmlTextNode &operator<<(XmlTextNode &node, const std::string &withText) {
   node.append(withText);
   return node;
 }
@@ -82,7 +82,7 @@ inline TextNode &operator<<(TextNode &node, const std::string &withText) {
  * Stream extraction overload: reads line-by-line (standard >> behavior) and
  * appends to the content of the node.
  */
-inline std::istream &operator>>(std::istream &is, TextNode &node) {
+inline std::istream &operator>>(std::istream &is, XmlTextNode &node) {
   std::string temp;
   if (std::getline(is, temp)) {
     node.append(temp);

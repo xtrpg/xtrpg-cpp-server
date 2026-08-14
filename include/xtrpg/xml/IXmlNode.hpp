@@ -1,21 +1,21 @@
 #pragma once
 
-#include "xtrpg/xml/NodeType.hpp"
+#include "xtrpg/xml/XmlNodeType.hpp"
 #include <iostream>
 
 namespace xtrpg::xml {
 
-class INode {
+class IXmlNode {
 public:
   /**
    * Constructor that takes in a node type.
    */
-  explicit INode(NodeType type) : _type(type) {}
+  explicit IXmlNode(XmlNodeType type) : _type(type) {}
 
   /**
    * Virtual destructor.
    */
-  virtual ~INode() = default;
+  virtual ~IXmlNode() = default;
 
   /**
    * Virtual method to serialize the node into the provided output stream.
@@ -25,16 +25,16 @@ public:
   /**
    * Returns the type of this node.
    */
-  NodeType type() const { return this->_type; };
+  XmlNodeType type() const { return this->_type; };
 
 private:
-  NodeType _type;
+  XmlNodeType _type;
 };
 
 /**
  * Stream operator overload for easy serialization
  */
-inline std::ostream &operator<<(std::ostream &os, const INode &node) {
+inline std::ostream &operator<<(std::ostream &os, const IXmlNode &node) {
   node.serialize(os);
   return os;
 }

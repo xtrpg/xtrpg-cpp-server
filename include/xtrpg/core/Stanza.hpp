@@ -2,7 +2,7 @@
 
 #include "xtrpg/core/Jid.hpp"
 #include "xtrpg/core/StanzaCategory.hpp"
-#include "xtrpg/xml/TagNode.hpp"
+#include "xtrpg/xml/XmlTagNode.hpp"
 #include <iostream>
 #include <optional>
 #include <sstream>
@@ -11,13 +11,13 @@
 
 namespace xtrpg::core {
 
-class Stanza : public xml::TagNode {
+class Stanza : public xml::XmlTagNode {
 public:
   /**
    * Instantiates a new StanzaCategory instance.
    */
   explicit Stanza(StanzaCategory category)
-      : TagNode(std::string(category.tagName())), _category(category) {}
+      : XmlTagNode(std::string(category.tagName())), _category(category) {}
   virtual ~Stanza() = default;
 
   StanzaCategory category() const { return this->_category; }
@@ -38,7 +38,7 @@ public:
   }
 
   const std::string &id() const {
-    return std::string(xml::TagNode::attribute("id").value_or(""));
+    return std::string(xml::XmlTagNode::attribute("id").value_or(""));
   }
   void id(std::string_view id) { this->attribute("id", std::string(id)); }
 
@@ -51,7 +51,7 @@ public:
       this->_from = Jid(value);
     }
 
-    xml::TagNode::attribute(key, value);
+    xml::XmlTagNode::attribute(key, value);
   }
 
 protected:

@@ -1,8 +1,8 @@
 #pragma once
 
-#include "xtrpg/xml/INode.hpp"
-#include "xtrpg/xml/NodeType.hpp"
-#include "xtrpg/xml/TextNode.hpp"
+#include "xtrpg/xml/IXmlNode.hpp"
+#include "xtrpg/xml/XmlNodeType.hpp"
+#include "xtrpg/xml/XmlTextNode.hpp"
 #include <iostream>
 #include <memory>
 #include <optional>
@@ -12,13 +12,13 @@
 
 namespace xtrpg::xml {
 
-class TagNode : public INode {
+class XmlTagNode : public IXmlNode {
 public:
   /**
    * Inline constructor that accepts a tag name.
    */
-  explicit TagNode(std::string name)
-      : INode(NodeType::TAG), _name(std::move(name)) {}
+  explicit XmlTagNode(std::string name)
+      : IXmlNode(XmlNodeType::TAG), _name(std::move(name)) {}
 
   /**
    * Returns a reference to the name of the tag.
@@ -58,7 +58,7 @@ public:
   /**
    * Appends a given child node.
    */
-  void append(std::shared_ptr<INode> child) {
+  void append(std::shared_ptr<IXmlNode> child) {
     if (child) {
       this->_children.push_back(std::move(child));
     }
@@ -67,7 +67,7 @@ public:
   /**
    * Returns a vector of child nodes.
    */
-  const std::vector<std::shared_ptr<INode>> &children() const {
+  const std::vector<std::shared_ptr<IXmlNode>> &children() const {
     return this->_children;
   }
 
@@ -105,13 +105,14 @@ public:
 private:
   std::string _name;
   std::unordered_map<std::string, std::string> _attributes;
-  std::vector<std::shared_ptr<INode>> _children;
+  std::vector<std::shared_ptr<IXmlNode>> _children;
 };
 
 /**
  * Stream operator overload for easy serialization
  */
-inline TagNode &operator<<(TagNode &node, std::shared_ptr<INode> child) {
+inline XmlTagNode &operator<<(XmlTagNode &node,
+                              std::shared_ptr<IXmlNode> child) {
   node.append(std::move(child));
   return node;
 }
@@ -120,8 +121,8 @@ inline TagNode &operator<<(TagNode &node, std::shared_ptr<INode> child) {
  * Stream operator overload for easy serialization, appends a new Text Node
  * child containing the provided text.
  */
-inline TagNode &operator<<(TagNode &node, const std::string &withText) {
-  auto textNode = std::make_shared<TextNode>(withText);
+inline XmlTagNode &operator<<(XmlTagNode &node, const std::string &withText) {
+  auto textNode = std::make_shared<XmlTextNode>(withText);
   node.append(textNode);
   return node;
 }
