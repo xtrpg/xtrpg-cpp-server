@@ -73,4 +73,5 @@ Testing/
 .cache/
 
 # GUI
-.vscode
+.idea/
+.vscode/
