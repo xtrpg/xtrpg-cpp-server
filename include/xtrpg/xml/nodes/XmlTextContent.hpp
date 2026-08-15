@@ -6,18 +6,18 @@
 
 namespace xtrpg::xml {
 
-class XmlTextNode : public IXmlNode {
+class XmlTextContent : public IXmlNode {
 public:
   /**
    * Default constructor that generate a blank text node.
    */
-  XmlTextNode() : IXmlNode(XmlNodeType::TEXT) {}
+  XmlTextContent() : IXmlNode(XmlNodeType::TEXT) {}
 
   /**
    * Constructor that takes in a copy of the text content to store within this
    * node.
    */
-  explicit XmlTextNode(std::string content)
+  explicit XmlTextContent(std::string content)
       : IXmlNode(XmlNodeType::TEXT), _content(std::move(content)) {}
 
   /**
@@ -73,7 +73,8 @@ private:
 /**
  * Stream insertion overload. (node << text).
  */
-inline XmlTextNode &operator<<(XmlTextNode &node, const std::string &withText) {
+inline XmlTextContent &operator<<(XmlTextContent &node,
+                                  const std::string &withText) {
   node.append(withText);
   return node;
 }
@@ -82,7 +83,7 @@ inline XmlTextNode &operator<<(XmlTextNode &node, const std::string &withText) {
  * Stream extraction overload: reads line-by-line (standard >> behavior) and
  * appends to the content of the node.
  */
-inline std::istream &operator>>(std::istream &is, XmlTextNode &node) {
+inline std::istream &operator>>(std::istream &is, XmlTextContent &node) {
   std::string temp;
   if (std::getline(is, temp)) {
     node.append(temp);
