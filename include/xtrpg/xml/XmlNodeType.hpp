@@ -7,7 +7,6 @@ namespace xtrpg::xml {
 
 enum class XmlNodeType {
   TAG,
-  TEXT,
   DECLARATION,
   START_TAG,
   END_TAG,

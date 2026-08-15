@@ -11,7 +11,7 @@
 #include "xtrpg/xml/ITagname.hpp"
 #include "xtrpg/xml/IXmlNode.hpp"
 #include "xtrpg/xml/XmlNodeType.hpp"
-#include "xtrpg/xml/XmlTextNode.hpp"
+#include "xtrpg/xml/nodes/XmlTextContent.hpp"
 
 namespace xtrpg::xml {
 
@@ -82,7 +82,7 @@ inline XmlTagNode &operator<<(XmlTagNode &node,
  * child containing the provided text.
  */
 inline XmlTagNode &operator<<(XmlTagNode &node, const std::string &withText) {
-  auto textNode = std::make_shared<XmlTextNode>(withText);
+  auto textNode = std::make_shared<XmlTextContent>(withText);
   node.append(textNode);
   return node;
 }

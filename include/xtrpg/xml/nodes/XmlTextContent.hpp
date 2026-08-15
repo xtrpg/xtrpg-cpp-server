@@ -11,14 +11,14 @@ public:
   /**
    * Default constructor that generate a blank text node.
    */
-  XmlTextContent() : IXmlNode(XmlNodeType::TEXT) {}
+  XmlTextContent() : IXmlNode(XmlNodeType::TEXT_CONTENT) {}
 
   /**
    * Constructor that takes in a copy of the text content to store within this
    * node.
    */
   explicit XmlTextContent(std::string content)
-      : IXmlNode(XmlNodeType::TEXT), _content(std::move(content)) {}
+      : IXmlNode(XmlNodeType::TEXT_CONTENT), _content(std::move(content)) {}
 
   /**
    * Returns a reference to the text content stored on this node.
