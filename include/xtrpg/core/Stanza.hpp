@@ -28,21 +28,21 @@ public:
   const Jid &to() const { return this->_to; }
   void to(Jid to) {
     this->_to = to;
-    this->attribute("to", to.str());
+    this->setAttribute("to", to.str());
   }
 
   const Jid &from() const { return this->_from; }
   void from(Jid from) {
     this->_from = from;
-    this->attribute("from", from.str());
+    this->setAttribute("from", from.str());
   }
 
   const std::string &id() const {
-    return std::string(xml::XmlTagNode::attribute("id").value_or(""));
+    return std::string(xml::XmlTagNode::getAttribute("id").value_or(""));
   }
-  void id(std::string_view id) { this->attribute("id", std::string(id)); }
+  void id(std::string_view id) { this->setAttribute("id", std::string(id)); }
 
-  void attribute(std::string key, std::string value) override {
+  void setAttribute(std::string key, std::string value) {
     if (key == "to") {
       this->_to = Jid(value);
     }
@@ -51,7 +51,7 @@ public:
       this->_from = Jid(value);
     }
 
-    xml::XmlTagNode::attribute(key, value);
+    xml::XmlTagNode::setAttribute(key, value);
   }
 
 protected:

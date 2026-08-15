@@ -1,8 +1,5 @@
 #pragma once
 
-#include "xtrpg/xml/IXmlNode.hpp"
-#include "xtrpg/xml/XmlNodeType.hpp"
-#include "xtrpg/xml/XmlTextNode.hpp"
 #include <iostream>
 #include <memory>
 #include <optional>
@@ -10,50 +7,26 @@
 #include <unordered_map>
 #include <vector>
 
+#include "xtrpg/xml/IAttributes.hpp"
+#include "xtrpg/xml/ITagname.hpp"
+#include "xtrpg/xml/IXmlNode.hpp"
+#include "xtrpg/xml/XmlNodeType.hpp"
+#include "xtrpg/xml/XmlTextNode.hpp"
+
 namespace xtrpg::xml {
 
-class XmlTagNode : public IXmlNode {
+class XmlTagNode : public IXmlNode, public ITagname, public IAttributes {
 public:
   /**
    * Inline constructor that accepts a tag name.
    */
   explicit XmlTagNode(std::string name)
-      : IXmlNode(XmlNodeType::TAG), _name(std::move(name)) {}
+      : IXmlNode(XmlNodeType::TAG), ITagname(name), IAttributes() {}
 
   /**
    * Returns a reference to the name of the tag.
    */
-  const std::string &name() const { return this->_name; }
-
-  /**
-   * Sets an attribute key/value pair.
-   */
-  virtual void attribute(std::string key, std::string value) {
-    this->_attributes[std::move(key)] = std::move(value);
-  }
-
-  /**
-   * Returns the value associated with the given attribute key.
-   */
-  std::optional<std::string_view> attribute(const std::string &key) const {
-    auto it = this->_attributes.find(key);
-    if (it != this->_attributes.end()) {
-      return it->second;
-    }
-    return std::nullopt;
-  }
-
-  /**
-   * Removes a given attribute if it exists, returning the value that was
-   * removed.
-   */
-  std::optional<std::string> remove(const std::string &key) {
-    auto node = this->_attributes.extract(key);
-    if (node.empty()) {
-      return std::nullopt;
-    }
-    return std::move(node.mapped());
-  }
+  const std::string_view name() const { return this->getTagname(); }
 
   /**
    * Appends a given child node.
@@ -75,23 +48,12 @@ public:
    * Serializes the node into an XML formatted string.
    */
   void serialize(std::ostream &os) const override {
-    os << "<" << this->_name;
-    for (const auto &[attr, val] : this->_attributes) {
-      os << " " << attr << "=\"";
-      // Escape attribute values
-      for (char c : val) {
-        if (c == '"')
-          os << "&quot;";
-        else if (c == '&')
-          os << "&amp;";
-        else
-          os << c;
-      }
-      os << "\"";
-    }
+    os << "<" << this->getTagname();
+
+    IAttributes::serialize(os);
 
     if (this->_children.empty()) {
-      os << " />";
+      os << "/>";
       return;
     }
 
@@ -99,12 +61,10 @@ public:
     for (const auto &child : this->_children) {
       child->serialize(os);
     }
-    os << "</" << this->_name << ">";
+    os << "</" << this->getTagname() << ">";
   }
 
 private:
-  std::string _name;
-  std::unordered_map<std::string, std::string> _attributes;
   std::vector<std::shared_ptr<IXmlNode>> _children;
 };
 
