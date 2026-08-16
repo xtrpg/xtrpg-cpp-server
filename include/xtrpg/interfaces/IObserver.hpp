@@ -7,12 +7,7 @@ template <typename TContext> class IObserver {
 public:
   virtual ~IObserver() = default;
 
-  virtual std::string_view getName() const = 0;
-
-  // Generic predicate check
-  virtual bool canObserve(const TContext &ctx) const = 0;
-
   // Generic handler callback
-  virtual void observe(TContext &ctx) = 0;
+  virtual void onObservation(TContext &ctx) = 0;
 };
 } // namespace xtrpg

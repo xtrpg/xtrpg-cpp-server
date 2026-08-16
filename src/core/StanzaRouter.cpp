@@ -92,13 +92,12 @@ void StanzaRouter::processStanza(StanzaContext &ctx) {
 
   // Run Observers
   for (const auto &observer : this->observers) {
-    if (observer->canObserve(ctx)) {
-      try {
-        observer->observe(ctx);
-      } catch (const std::exception &e) {
-        std::cerr << "[Router Worker] Observer error in " << observer->getName()
-                  << ": " << e.what() << std::endl;
-      }
+
+    try {
+      observer->onObservation(ctx);
+    } catch (const std::exception &e) {
+      std::cerr << "[Router Worker] Observer error " << ": " << e.what()
+                << std::endl;
     }
   }
 
