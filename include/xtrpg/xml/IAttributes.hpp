@@ -45,6 +45,17 @@ public:
   }
 
   /**
+   * Executes a callback function for each key/value attribute pair.
+   *
+   * Callback signature: void(std::string_view key, std::string_view value)
+   */
+  template <typename Func> void forEachAttribute(Func &&callback) const {
+    for (const auto &[key, value] : this->_attributes) {
+      callback(std::string_view{key}, std::string_view{value});
+    }
+  }
+
+  /**
    * Serializes the node into an XML formatted string.
    */
   void serialize(std::ostream &os) const {
