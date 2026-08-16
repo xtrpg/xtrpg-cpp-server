@@ -1,6 +1,7 @@
 #pragma once
 
 #include <iostream>
+#include <memory>
 #include <string_view>
 #include <vector>
 
@@ -22,10 +23,11 @@ public:
       return;
     }
 
-    std::erase_if(this->_observers, [&target](const std::weak_ptr<T> &wp) {
-      auto sp = wp.lock();
-      return !sp || sp == target;
-    });
+    std::erase_if(this->_observers,
+                  [&target](const std::weak_ptr<IObserver<TContext>> &wp) {
+                    auto sp = wp.lock();
+                    return !sp || sp == target;
+                  });
   }
 
   void eraseObserver(const IObserver<TContext> *pTarget) {
@@ -33,29 +35,32 @@ public:
       return;
     }
 
-    std::erase_if(this->_observers, [pTarget](const std::weak_ptr<T> &wp) {
-      auto sp = wp.lock();
-      return !sp || sp.get() == target_ptr;
-    });
+    std::erase_if(this->_observers,
+                  [pTarget](const std::weak_ptr<IObserver<TContext>> &wp) {
+                    auto sp = wp.lock();
+                    return !sp || sp.get() == pTarget;
+                  });
   }
 
   void clearObservers() { this->_observers.clear(); }
 
 protected:
   void dispatchObservation(TContext &ctx) {
-    std::erase_if(this->_observers, [&ctx](const std::weak_ptr<TContext> &wp) {
-      // Attempt to gain temporary ownership of the current observer.
-      if (auto observer = wp.lock()) {
-        // Dispatch the observation.
-        observer->onObservation(ctx);
+    std::erase_if(this->_observers,
+                  [&ctx](const std::weak_ptr<IObserver<TContext>> &wp) {
+                    // Attempt to gain temporary ownership of the current
+                    // observer.
+                    if (auto observer = wp.lock()) {
+                      // Dispatch the observation.
+                      observer->onObservation(ctx);
 
-        // Pointer is still valid, keep it in the vector.
-        return false;
-      }
+                      // Pointer is still valid, keep it in the vector.
+                      return false;
+                    }
 
-      // Pointer has expired, remove it from the observers vector.
-      return true;
-    });
+                    // Pointer has expired, remove it from the observers vector.
+                    return true;
+                  });
   }
 
 private:
