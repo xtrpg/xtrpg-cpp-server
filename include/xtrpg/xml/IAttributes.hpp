@@ -17,8 +17,8 @@ public:
   /**
    * Sets an attribute key/value pair.
    */
-  void setAttribute(std::string key, std::string value) {
-    this->_attributes[std::move(key)] = std::move(value);
+  void setAttribute(std::string_view key, std::string_view value) {
+    this->_attributes[std::string(key)] = std::string(value);
   }
 
   /**
