@@ -14,8 +14,4 @@ enum class XmlNodeType {
   TEXT_CONTENT
 };
 
-inline std::ostream &operator<<(std::ostream &os, XmlNodeType type) {
-  return os << type;
-}
-
 } // namespace xtrpg::xml
