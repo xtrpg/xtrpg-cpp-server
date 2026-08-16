@@ -13,8 +13,6 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 # Find Packages - vcpkg provides standard CMake target configs
 find_package(asio CONFIG REQUIRED)
 find_package(OpenSSL REQUIRED)
-find_package(pugixml CONFIG REQUIRED)
-find_package(threads REQUIRED)
 
 # Append cmake directory to module path
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/cmake")
@@ -29,6 +27,31 @@ find_package(UserModules QUIET)
 option(ENABLE_STORAGE_MEMORY "Include in-memory storage backend" ON)
 option(ENABLE_STORAGE_SQLITE "Include SQLite storage backend" OFF)
 option(ENABLE_STORAGE_POSTGRES "Include PostgreSQL storage backend" OFF)
+
+# XTRPG Network Library
+add_library(xtrpg_network STATIC
+    src/network/SocketConnectionListener.cpp
+    src/network/TcpConnection.cpp
+)
+target_include_directories(xtrpg_network PUBLIC include)
+target_link_libraries(xtrpg_network PUBLIC
+    asio::asio
+    OpenSSL::SSL
+    OpenSSL::Crypto
+)
+if(WIN32)
+    # Windows-specific OS network primitives for raw sockets
+    # Define minimum Windows version (0x0601 = Windows 7, 0x0A00 = Windows 10)
+    # 0x0A00 unlocks modern Windows socket features for Asio
+    target_compile_definitions(xtrpg_network PUBLIC
+        _WIN32_WINNT=0x0A00
+        WINVER=0x0A00
+    )
+    target_link_libraries(xtrpg_network PUBLIC ws2_32 wsock32 crypt32)
+elseif(UNIX AND NOT APPLE)
+    # Platform-specific OS network primitives for raw sockets
+    target_link_libraries(xtrpg_network PUBLIC pthread dl)
+endif()
 
 # Core Server Target
 add_library(xtrpg_core STATIC
@@ -57,7 +80,7 @@ endif()
 
 # Executable Target
 add_executable(xtrpg_cpp_server apps/main.cpp)
-target_link_libraries(xtrpg_cpp_server PRIVATE xtrpg_core)
+target_link_libraries(xtrpg_cpp_server PRIVATE xtrpg_core xtrpg_network)
 
 # If modules produce targets registered via xmpp_register_user_module
 if(USER_MODULE_TARGETS)
