@@ -12,7 +12,7 @@ public:
    * Inline constructor that accepts a tag name.
    */
   explicit XmlStartTag(std::string tagname)
-      : IXmlNode(XmlNodeType::TAG), ITagname(tagname), IAttributes() {}
+      : IXmlNode(XmlNodeType::START_TAG), ITagname(tagname), IAttributes() {}
 
   /**
    * Serializes the node into an XML formatted string.

@@ -14,7 +14,8 @@ public:
    * Inline constructor that accepts a tag name.
    */
   explicit XmlEmptyElementTag(std::string tagname)
-      : IXmlNode(XmlNodeType::TAG), ITagname(tagname), IAttributes() {}
+      : IXmlNode(XmlNodeType::EMPTY_ELEMENT_TAG), ITagname(tagname),
+        IAttributes() {}
 
   /**
    * Serializes the node into an XML formatted string.
@@ -26,4 +27,4 @@ public:
   }
 };
 
-} // namespace xtrpg::xml
+} // namespace xtrpg::xml::node
