@@ -17,6 +17,13 @@ jobs:
         with:
           fetch-depth: 0 # Required to see full git tag history
 
+      # Set up vcpkg executable and binary cache
+      - name: Setup vcpkg
+        uses: lukka/run-vcpkg@v11
+        with:
+          # Uses the vcpkg.json in your repository root automatically
+          vcpkgJsonGlob: 'vcpkg.json'
+
       # Automatically calculate the next version string based on commits
       - name: Calculate Next Version
         id: semver
@@ -27,12 +34,15 @@ jobs:
           minor_pattern: "feat:"
           version_format: "${major}.${minor}.${patch}"
 
-      # Pass the calculated version variable straight into the CMake config
+      # Configure CMake passing the vcpkg toolchain file
       - name: Configure CMake with New Version
         run: |
           cmake -B build -S . \
+            -DCMAKE_TOOLCHAIN_FILE="$VCPKG_ROOT/scripts/buildsystems/vcpkg.cmake" \
             -DBUILD_VERSION="${{ steps.semver.outputs.version }}" \
             -DCMAKE_BUILD_TYPE=Release
+
+      # Build the C++ Binary
       - name: Build C++ Binary
         run: cmake --build build --config Release
 
