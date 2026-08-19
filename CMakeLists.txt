@@ -45,9 +45,6 @@ option(ENABLE_STORAGE_POSTGRES "Include PostgreSQL storage backend" OFF)
 
 # Core Server Target
 add_library(xtrpg_core STATIC
-    src/core/C2SServer.cpp
-    src/core/S2SServer.cpp
-    src/core/ModuleRegistry.cpp
 )
 target_include_directories(xtrpg_core PUBLIC include)
 
