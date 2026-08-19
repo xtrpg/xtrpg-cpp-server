@@ -25,7 +25,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           repository: 'microsoft/vcpkg'
-          ref: '501db0f171095204123565f4262ae7d17482ea05'
+          ref: '2026.07.29'
           path: 'vcpkg'
           
       - name: Configure Git Safe Directory
