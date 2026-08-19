@@ -44,9 +44,9 @@ option(ENABLE_STORAGE_SQLITE "Include SQLite storage backend" OFF)
 option(ENABLE_STORAGE_POSTGRES "Include PostgreSQL storage backend" OFF)
 
 # Core Server Target
-add_library(xtrpg_core STATIC
-)
-target_include_directories(xtrpg_core PUBLIC include)
+# add_library(xtrpg_core STATIC
+# )
+# target_include_directories(xtrpg_core PUBLIC include)
 
 # Link imported targets across platforms
 target_link_libraries(xtrpg_core PUBLIC
@@ -56,24 +56,24 @@ target_link_libraries(xtrpg_core PUBLIC
 )
 
 # Platform-specific OS network primitives for raw sockets
-if(WIN32)
-    target_link_libraries(xtrpg_core PUBLIC ws2_32 wsock32 crypt32)
-elseif(UNIX AND NOT APPLE)
-    target_link_libraries(xtrpg_core PUBLIC pthread dl)
-endif()
+# if(WIN32)
+#     target_link_libraries(xtrpg_core PUBLIC ws2_32 wsock32 crypt32)
+# elseif(UNIX AND NOT APPLE)
+#     target_link_libraries(xtrpg_core PUBLIC pthread dl)
+# endif()
 
 # Conditional Storage Compilation
-if(ENABLE_STORAGE_SQLITE)
-    find_package(SQLite3 REQUIRED)
-    target_sources(xtrpg_core PRIVATE src/storage/SQLiteBackend.cpp)
-    target_compile_definitions(xtrpg_core PUBLIC HAS_STORAGE_SQLITE)
-    target_link_libraries(xtrpg_core PRIVATE SQLite::SQLite3)
-endif()
+# if(ENABLE_STORAGE_SQLITE)
+#     find_package(SQLite3 REQUIRED)
+#     target_sources(xtrpg_core PRIVATE src/storage/SQLiteBackend.cpp)
+#     target_compile_definitions(xtrpg_core PUBLIC HAS_STORAGE_SQLITE)
+#     target_link_libraries(xtrpg_core PRIVATE SQLite::SQLite3)
+# endif()
 
-if(ENABLE_STORAGE_MEMORY)
-    target_sources(xtrpg_core PRIVATE src/storage/MemoryBackend.cpp)
-    target_compile_definitions(xtrpg_core PUBLIC HAS_STORAGE_MEMORY)
-endif()
+# if(ENABLE_STORAGE_MEMORY)
+#     target_sources(xtrpg_core PRIVATE src/storage/MemoryBackend.cpp)
+#     target_compile_definitions(xtrpg_core PUBLIC HAS_STORAGE_MEMORY)
+# endif()
 
 # Include discovered modules into the build
 if(UserModules_FOUND)
@@ -89,7 +89,7 @@ endif()
 
 # Executable Target
 add_executable(xtrpg_cpp_server apps/main.cpp)
-target_link_libraries(xtrpg_cpp_server PRIVATE xtrpg_core)
+# target_link_libraries(xtrpg_cpp_server PRIVATE xtrpg_core)
 target_include_directories(xtrpg_cpp_server PRIVATE ${CMAKE_BINARY_DIR}/generated)
 
 # If modules produce targets registered via xmpp_register_user_module
