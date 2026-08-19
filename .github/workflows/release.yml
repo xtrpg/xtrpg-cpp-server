@@ -17,22 +17,28 @@ jobs:
         with:
           fetch-depth: 0 
 
+      # Fetch the official vcpkg repo directly
       - name: Checkout vcpkg
         uses: actions/checkout@v4
         with:
-          repository: 'microsoft/vcpkg'
-          ref: '2026.07.29'
-          path: 'vcpkg'
+          repository: "https://github.com/Microsoft/vcpkg"
+          path: "vcpkg"
 
-      - name: Configure Git Safe Directory
-        run: git config --global --add safe.directory '*'
+      - name: Bootstrap vcpkg
+        run: |
+          ./vcpkg/bootstrap-vcpkg.sh
+        shell: bash
 
-      # Set up vcpkg executable and binary cache
-      - name: Setup vcpkg
-        uses: lukka/run-vcpkg@v11
+      # Set up GitHub Actions Cache for vcpkg binary caching
+      - name: Setup vcpkg Cache
+        uses: actions/cache@v4
         with:
-          # Uses the vcpkg.json in the repository root 
-          vcpkgJsonGlob: 'vcpkg.json'
+          path: |
+            ~/.cache/vcpkg
+            ~/.vcpkg
+          key: ${{ runner.os }}-vcpkg-${{ hashFiles('vcpkg.json') }}
+          restore-keys: |
+            ${{ runner.os }}-vcpkg-
 
       # Automatically calculate the next version string based on commits
       - name: Calculate Next Version
