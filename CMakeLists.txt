@@ -28,7 +28,6 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 # Find Packages - vcpkg provides standard CMake target configs
 find_package(asio CONFIG REQUIRED)
 find_package(OpenSSL REQUIRED)
-find_package(pugixml CONFIG REQUIRED)
 find_package(threads REQUIRED)
 
 # Append cmake directory to module path
@@ -58,7 +57,6 @@ target_link_libraries(xtrpg_core PUBLIC
     asio::asio
     OpenSSL::SSL
     OpenSSL::Crypto
-    pugixml::pugixml
     Threads::Threads
 )
 
