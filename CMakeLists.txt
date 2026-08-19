@@ -1,17 +1,17 @@
 cmake_minimum_required(VERSION 3.20)
 
 # If no variable is passed from the environment/command line, use a fallback
-if(NOT DEFINED APP_VERSION)
-    set(APP_VERSION "0.1.0")
+if(NOT DEFINED BUILD_VERSION)
+    set(BUILD_VERSION "0.1.0")
 endif()
 
 # Separate the SemVer string into major, minor, patch parts
-string(REPLACE "." ";" VERSION_LIST ${APP_VERSION})
+string(REPLACE "." ";" VERSION_LIST ${BUILD_VERSION})
 list(GET VERSION_LIST 0 PROJECT_VERSION_MAJOR)
 list(GET VERSION_LIST 1 PROJECT_VERSION_MINOR)
 list(GET VERSION_LIST 2 PROJECT_VERSION_PATCH)
 
-project(xtrpg_cpp_server VERSION ${APP_VERSION} LANGUAGES CXX)
+project(xtrpg_cpp_server VERSION ${BUILD_VERSION} LANGUAGES CXX)
 
 # Generate the actual hpp file into the build binary directory
 configure_file("generated/version.hpp.in" ${CMAKE_BINARY_DIR}/generated/version.hpp)
