@@ -39,9 +39,9 @@ set(USER_MODULES_DIR "" CACHE PATH "Directory containing custom XMPP user module
 find_package(UserModules QUIET)
 
 # Modular Build Options
-option(ENABLE_STORAGE_MEMORY "Include in-memory storage backend" ON)
-option(ENABLE_STORAGE_SQLITE "Include SQLite storage backend" OFF)
-option(ENABLE_STORAGE_POSTGRES "Include PostgreSQL storage backend" OFF)
+# option(ENABLE_STORAGE_MEMORY "Include in-memory storage backend" ON)
+# option(ENABLE_STORAGE_SQLITE "Include SQLite storage backend" OFF)
+# option(ENABLE_STORAGE_POSTGRES "Include PostgreSQL storage backend" OFF)
 
 # Core Server Target
 # add_library(xtrpg_core STATIC
@@ -49,11 +49,11 @@ option(ENABLE_STORAGE_POSTGRES "Include PostgreSQL storage backend" OFF)
 # target_include_directories(xtrpg_core PUBLIC include)
 
 # Link imported targets across platforms
-target_link_libraries(xtrpg_core PUBLIC
-    asio::asio
-    OpenSSL::SSL
-    OpenSSL::Crypto
-)
+# target_link_libraries(xtrpg_core PUBLIC
+#     asio::asio
+#     OpenSSL::SSL
+#     OpenSSL::Crypto
+# )
 
 # Platform-specific OS network primitives for raw sockets
 # if(WIN32)
@@ -94,5 +94,5 @@ target_include_directories(xtrpg_cpp_server PRIVATE ${CMAKE_BINARY_DIR}/generate
 
 # If modules produce targets registered via xmpp_register_user_module
 if(USER_MODULE_TARGETS)
-    target_link_libraries(xmpp_server PRIVATE ${USER_MODULE_TARGETS})
+    target_link_libraries(xtrpg_cpp_server PRIVATE ${USER_MODULE_TARGETS})
 endif()
