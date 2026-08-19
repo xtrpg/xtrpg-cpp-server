@@ -48,7 +48,7 @@ jobs:
       - name: Configure CMake with New Version
         run: |
           cmake -B build -S . \
-            -DCMAKE_TOOLCHAIN_FILE="$VCPKG_ROOT/scripts/buildsystems/vcpkg.cmake" \
+            -DCMAKE_TOOLCHAIN_FILE="./vcpkg/scripts/buildsystems/vcpkg.cmake" \
             -DCMAKE_BUILD_TYPE=Release
 
       # Build the C++ Binary
