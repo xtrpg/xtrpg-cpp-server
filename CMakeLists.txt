@@ -1,5 +1,20 @@
 cmake_minimum_required(VERSION 3.20)
-project(xtrpg_cpp_server LANGUAGES CXX)
+
+# If no variable is passed from the environment/command line, use a fallback
+if(NOT DEFINED BUILD_VERSION)
+    set(BUILD_VERSION "0.1.0")
+endif()
+
+# Separate the SemVer string into major, minor, patch parts
+string(REPLACE "." ";" VERSION_LIST ${BUILD_VERSION})
+list(GET VERSION_LIST 0 PROJECT_VERSION_MAJOR)
+list(GET VERSION_LIST 1 PROJECT_VERSION_MINOR)
+list(GET VERSION_LIST 2 PROJECT_VERSION_PATCH)
+
+project(xtrpg_cpp_server VERSION ${BUILD_VERSION} LANGUAGES CXX)
+
+# Generate the actual hpp file into the build binary directory
+configure_file("generated/version.hpp.in" ${CMAKE_BINARY_DIR}/generated/version.hpp)
 
 # Auto-detect vcpkg if VCPKG_ROOT environment variable is set
 if(DEFINED ENV{VCPKG_ROOT} AND NOT DEFINED CMAKE_TOOLCHAIN_FILE)
@@ -82,6 +97,7 @@ endif()
 # Executable Target
 add_executable(xtrpg_cpp_server apps/main.cpp)
 target_link_libraries(xtrpg_cpp_server PRIVATE xtrpg_core)
+target_include_directories(xtrpg_cpp_server PRIVATE ${CMAKE_BINARY_DIR}/generated)
 
 # If modules produce targets registered via xmpp_register_user_module
 if(USER_MODULE_TARGETS)
