@@ -1,6 +1,7 @@
 {
 	"name": "xtrpg-cpp-server",
 	"version-string": "0.1.0",
+	"builtin-baseline": "501db0f171095204123565f4262ae7d17482ea05",
 	"dependencies": [
 		"asio",
 		"openssl"
