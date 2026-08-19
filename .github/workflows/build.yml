@@ -1,0 +1,43 @@
+name: Automated Release Build
+
+on:
+  pull_request:
+    branches:
+      - main
+    types: [opened, synchronize, reopened]
+  # push:
+  #   branches:
+  #     - main
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 
+          
+      - name: Configure Git Safe Directory
+        run: git config --global --add safe.directory '*'
+
+      # Set up vcpkg executable and binary cache
+      - name: Setup vcpkg
+        uses: lukka/run-vcpkg@v11
+        with:
+          # Uses the vcpkg.json in the repository root 
+          vcpkgJsonGlob: 'vcpkg.json'
+
+      # Configure CMake passing the vcpkg toolchain file
+      - name: Configure CMake with New Version
+        run: |
+          cmake -B build -S . \
+            -DCMAKE_TOOLCHAIN_FILE="$VCPKG_ROOT/scripts/buildsystems/vcpkg.cmake" \
+            -DCMAKE_BUILD_TYPE=Release
+
+      # Build the C++ Binary
+      - name: Build C++ Binary
+        run: cmake --build build --config Release
