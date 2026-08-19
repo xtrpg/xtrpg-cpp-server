@@ -28,7 +28,6 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 # Find Packages - vcpkg provides standard CMake target configs
 find_package(asio CONFIG REQUIRED)
 find_package(OpenSSL REQUIRED)
-find_package(threads REQUIRED)
 
 # Append cmake directory to module path
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/cmake")
@@ -57,7 +56,6 @@ target_link_libraries(xtrpg_core PUBLIC
     asio::asio
     OpenSSL::SSL
     OpenSSL::Crypto
-    Threads::Threads
 )
 
 # Platform-specific OS network primitives for raw sockets
