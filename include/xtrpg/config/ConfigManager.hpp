@@ -4,6 +4,7 @@
 #include <functional>
 #include <iostream>
 #include <memory>
+#include <optional>
 #include <sstream>
 #include <string>
 #include <unordered_map>
@@ -44,12 +45,6 @@ struct ConfigOption {
    * Description of the option, used for help output and documentation.
    */
   std::string description;
-
-  /**
-   * Optional CLI flag for the option, used for command-line overrides (e.g.,
-   * "--threads").
-   */
-  std::string cliFlag;
 };
 
 /**
@@ -231,8 +226,4 @@ public:
   void dumpResolvedConfig(std::ostream &os) const;
 };
 
-// inline std::ostream &operator<<(std::ostream &os, const ConfigValue &val) {
-//   std::visit([&os](auto &&arg) { os << arg; }, val);
-//   return os;
-// }
 } // namespace xtrpg::config

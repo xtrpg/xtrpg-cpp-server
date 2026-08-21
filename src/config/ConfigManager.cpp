@@ -15,10 +15,6 @@ void ConfigManager::registerModule(const IModuleConfigProvider &provider) {
   for (const auto &opt : schema.options) {
     // Apply lowest priority layers first: Module / Platform Defaults
     m_values[section][opt.key] = opt.defaultValue;
-
-    if (!opt.cliFlag.empty()) {
-      m_cliFlagMap[opt.cliFlag] = section + "." + opt.key;
-    }
   }
 }
 
@@ -33,10 +29,6 @@ void ConfigManager::printHelp(std::ostream &os) const {
   for (const auto &[section, options] : m_schemas) {
     os << "[" << section << "]\n";
     for (const auto &opt : options) {
-      os << "  ";
-      if (!opt.cliFlag.empty()) {
-        os << opt.cliFlag << ", ";
-      }
       os << "--" << section << "." << opt.key;
       os << "\n      " << opt.description;
       os << " (Default: " << formatValue(opt.defaultValue) << ")\n";
@@ -129,10 +121,7 @@ void ConfigManager::parseCLI(int argc, char *argv[]) {
       }
     }
 
-    // Map short flag to section.key if applicable
-    if (m_cliFlagMap.count(keyPath)) {
-      keyPath = m_cliFlagMap[keyPath];
-    } else if (keyPath.rfind("--", 0) == 0) {
+    if (keyPath.rfind("--", 0) == 0) {
       keyPath = keyPath.substr(2); // Strip leading --
     }
 
@@ -164,6 +153,7 @@ void ConfigManager::parseCLI(int argc, char *argv[]) {
  * dumped. Defaults to std::cout.
  */
 void ConfigManager::dumpResolvedConfig(std::ostream &os) const {
+
   for (const auto &[section, options] : m_values) {
     os << "[" << section << "]\n";
     for (const auto &[key, value] : options) {
@@ -176,7 +166,7 @@ void ConfigManager::dumpResolvedConfig(std::ostream &os) const {
             schemaOptions.begin(), schemaOptions.end(),
             [&key](const ConfigOption &opt) { return opt.key == key; });
         if (optIt != schemaOptions.end()) {
-          os << "  # " << optIt->description << "\n";
+          os << "# " << optIt->description << "\n";
         }
       }
 
