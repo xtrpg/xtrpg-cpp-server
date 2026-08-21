@@ -7,7 +7,7 @@ int main(int argc, char *argv[]) {
 
   // Output preamble information about the application and its configuration
   // system.
-  std::cout << "XTRPG C++ Server" << std::endl
+  std::cout << "XTRPG: A XMPP Server" << std::endl
             << "Version: 0.1.0" << std::endl
             << "Copyright (C) 2026 XTRPG Contributors" << std::endl
             << "License: MIT" << std::endl
