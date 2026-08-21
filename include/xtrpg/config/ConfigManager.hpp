@@ -27,6 +27,31 @@ namespace xtrpg::config {
 using ConfigValue = std::variant<bool, int64_t, double, std::string>;
 
 /**
+ * Represents a configuration value with tiered overrides, allowing for
+ * system defaults, file-based overrides, and command-line argument overrides.
+ */
+struct TieredConfigValue {
+  /** The default value for the configuration option. */
+  ConfigValue systemDefault;
+
+  /** The value overridden by a configuration file. */
+  std::optional<ConfigValue> fileOverride{std::nullopt};
+
+  /** The value overridden by a command-line argument. */
+  std::optional<ConfigValue> cliOverride{std::nullopt};
+
+  /**
+   * Retrieves the effective value for the configuration option, considering
+   * the hierarchy of overrides: CLI > File > System Default.
+   *
+   * @returns The effective ConfigValue based on the override hierarchy.
+   */
+  ConfigValue getEffectiveValue() const {
+    return cliOverride.value_or(fileOverride.value_or(systemDefault));
+  }
+};
+
+/**
  * Represents a single configuration option with its metadata.
  */
 struct ConfigOption {
@@ -59,7 +84,8 @@ struct ModuleConfig {
   std::string name;
 
   /**
-   * Optional description of the module, used for help output and documentation.
+   * Optional description of the module, used for help output and
+   * documentation.
    */
   std::string description;
 
@@ -100,7 +126,8 @@ private:
   /**
    * Stores the resolved configuration values, organized by section and key.
    */
-  std::unordered_map<std::string, std::unordered_map<std::string, ConfigValue>>
+  std::unordered_map<std::string,
+                     std::unordered_map<std::string, TieredConfigValue>>
       m_values;
 
   /**
@@ -145,9 +172,9 @@ public:
       std::function<std::unique_ptr<IModuleConfigProvider>()>;
 
   /**
-   * Returns a reference to the static registry of module configuration provider
-   * factories, allowing modules to register their configuration schemas at
-   * compile time.
+   * Returns a reference to the static registry of module configuration
+   * provider factories, allowing modules to register their configuration
+   * schemas at compile time.
    */
   static std::vector<ProviderFactory> &getRegistry() {
     static std::vector<ProviderFactory> registry;
@@ -155,8 +182,8 @@ public:
   }
 
   /**
-   * Registers a module's configuration provider factory in the static registry,
-   * allowing it to be discovered and included in the final resolved
+   * Registers a module's configuration provider factory in the static
+   * registry, allowing it to be discovered and included in the final resolved
    * configuration values.
    *
    * @param factory A factory function that returns a unique_ptr to an
@@ -180,8 +207,8 @@ public:
   }
 
   /**
-   * Registers a module's configuration schema with the ConfigManager, allowing
-   * it to be included in the final resolved configuration values.
+   * Registers a module's configuration schema with the ConfigManager,
+   * allowing it to be included in the final resolved configuration values.
    */
   void registerModule(const IModuleConfigProvider &provider);
 
@@ -208,8 +235,8 @@ public:
 
   /**
    * Retrieves the resolved configuration value for a given section and key,
-   * returning it as the specified type T. Throws an exception if the section or
-   * key does not exist or if the type does not match.
+   * returning it as the specified type T. Throws an exception if the section
+   * or key does not exist or if the type does not match.
    */
   template <typename T>
   std::optional<T> get(const std::string &section,
@@ -224,7 +251,7 @@ public:
       return std::nullopt;
     }
 
-    return std::get<T>(keyIt->second);
+    return std::get<T>(keyIt->second.getEffectiveValue());
   }
 
   /**

@@ -8,13 +8,10 @@ namespace xtrpg::config {
  */
 void ConfigManager::registerModule(const IModuleConfigProvider &provider) {
   ModuleConfig schema = provider.getConfigSchema();
-  std::string section = schema.name;
-
-  m_schemas[section] = schema.options;
-
+  m_schemas[schema.name] = schema.options;
   for (const auto &opt : schema.options) {
     // Apply lowest priority layers first: Module / Platform Defaults
-    m_values[section][opt.key] = opt.defaultValue;
+    m_values[schema.name][opt.key] = {.systemDefault = opt.defaultValue};
   }
 }
 
@@ -73,19 +70,20 @@ bool ConfigManager::loadTomlFile(const std::string &fileContent) {
       // Deduce type & assign (Overwrites module/compile defaults)
       if (valStr == "true")
         // Boolean type set to true
-        m_values[currentSection][key] = true;
+        m_values[currentSection][key].fileOverride = true;
       else if (valStr == "false")
         // Boolean type set to false
-        m_values[currentSection][key] = false;
+        m_values[currentSection][key].fileOverride = false;
       else if (valStr.front() == '"' && valStr.back() == '"') {
         // String type
-        m_values[currentSection][key] = valStr.substr(1, valStr.size() - 2);
+        m_values[currentSection][key].fileOverride =
+            valStr.substr(1, valStr.size() - 2);
       } else if (valStr.find('.') != std::string::npos) {
         // Double type
-        m_values[currentSection][key] = std::stod(valStr);
+        m_values[currentSection][key].fileOverride = std::stod(valStr);
       } else {
         // Integer type
-        m_values[currentSection][key] = std::stoll(valStr);
+        m_values[currentSection][key].fileOverride = std::stoll(valStr);
       }
     }
   }
@@ -132,13 +130,13 @@ void ConfigManager::parseCLI(int argc, char *argv[]) {
 
       if (!valueStr.empty()) {
         if (valueStr == "true")
-          m_values[section][key] = true;
+          m_values[section][key].cliOverride = true;
         else if (valueStr == "false")
-          m_values[section][key] = false;
+          m_values[section][key].cliOverride = false;
         else if (std::all_of(valueStr.begin(), valueStr.end(), ::isdigit)) {
-          m_values[section][key] = std::stoll(valueStr);
+          m_values[section][key].cliOverride = std::stoll(valueStr);
         } else {
-          m_values[section][key] = valueStr;
+          m_values[section][key].cliOverride = valueStr;
         }
       }
     }
@@ -171,7 +169,7 @@ void ConfigManager::dumpResolvedConfig(std::ostream &os) const {
       }
 
       // output the key and its corresponding value in a readable format
-      os << key << " = " << formatValue(value) << "\n";
+      os << key << " = " << formatValue(value.getEffectiveValue()) << "\n";
     }
     os << "\n";
   }
