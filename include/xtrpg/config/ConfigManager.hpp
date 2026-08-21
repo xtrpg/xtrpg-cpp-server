@@ -5,7 +5,6 @@
 #include <iostream>
 #include <memory>
 #include <optional>
-#include <sstream>
 #include <string>
 #include <unordered_map>
 #include <variant>
@@ -224,8 +223,10 @@ public:
   /**
    * Loads configuration values from a TOML file, parsing the content and
    * applying the values to the appropriate sections and keys.
+   *
+   * @param input The stream containing the TOML configuration.
    */
-  bool loadTomlFile(const std::string &fileContent);
+  bool loadTomlFile(std::istream &input);
 
   /**
    * Parses command-line arguments, updating configuration values based on the

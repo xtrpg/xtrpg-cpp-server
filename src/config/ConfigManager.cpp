@@ -38,12 +38,11 @@ void ConfigManager::printHelp(std::ostream &os) const {
  * Loads configuration values from a TOML file, parsing the content and
  * applying the values to the appropriate sections and keys.
  */
-bool ConfigManager::loadTomlFile(const std::string &fileContent) {
-  std::stringstream ss(fileContent);
+bool ConfigManager::loadTomlFile(std::istream &input) {
   std::string line;
   std::string currentSection = "global";
 
-  while (std::getline(ss, line)) {
+  while (std::getline(input, line)) {
     // Trim simple whitespace
     line.erase(0, line.find_first_not_of(" \t\r\n"));
     line.erase(line.find_last_not_of(" \t\r\n") + 1);
