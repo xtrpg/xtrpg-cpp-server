@@ -18,7 +18,8 @@ int main(int argc, char *argv[]) {
             << "This is free and open-source software. You are free to use, "
                "modify, and redistribute it under the terms of the MIT License."
             << std::endl
-            << "There is NO WARRANTY for this software." << std::endl;
+            << "There is NO WARRANTY for this software." << std::endl
+            << std::endl;
 
   // Discover and register all modules' configuration schemas, then load the
   // configuration file and parse command-line arguments.

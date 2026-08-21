@@ -21,15 +21,17 @@ void ConfigManager::registerModule(const IModuleConfigProvider &provider) {
  * @param os The output stream to which the help menu will be printed.
  */
 void ConfigManager::printHelp(std::ostream &os) const {
-  os << "Usage: app [options]\n\n";
+  os << "Usage: app [options]" << std::endl << std::endl;
+  os << "Options:" << std::endl;
+  os << "  --help, -h          Show this help message and exit" << std::endl;
   for (const auto &[section, options] : m_schemas) {
-    os << "[" << section << "]\n";
+    os << "[" << section << "]" << std::endl;
     for (const auto &opt : options) {
-      os << "--" << section << "." << opt.key;
-      os << "\n      " << opt.description;
-      os << " (Default: " << formatValue(opt.defaultValue) << ")\n";
+      os << "--" << section << "." << opt.key << std::endl
+         << "      " << opt.description
+         << " (Default: " << formatValue(opt.defaultValue) << ")\n";
     }
-    os << "\n";
+    os << std::endl;
   }
 }
 
