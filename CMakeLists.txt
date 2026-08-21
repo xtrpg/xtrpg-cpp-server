@@ -1,5 +1,11 @@
 cmake_minimum_required(VERSION 3.20)
 
+# Auto-detect vcpkg if VCPKG_ROOT environment variable is set
+if(DEFINED ENV{VCPKG_ROOT} AND NOT DEFINED CMAKE_TOOLCHAIN_FILE)
+    set(CMAKE_TOOLCHAIN_FILE "$ENV{VCPKG_ROOT}/scripts/buildsystems/vcpkg.cmake"
+        CACHE STRING "vcpkg toolchain file")
+endif()
+
 # If no variable is passed from the environment/command line, use a fallback
 if(NOT DEFINED BUILD_VERSION)
     set(BUILD_VERSION "0.1.0")
@@ -15,12 +21,6 @@ project(xtrpg_cpp_server VERSION ${BUILD_VERSION} LANGUAGES CXX)
 
 # Generate the actual hpp file into the build binary directory
 configure_file("generated/version.hpp.in" ${CMAKE_BINARY_DIR}/generated/version.hpp)
-
-# Auto-detect vcpkg if VCPKG_ROOT environment variable is set
-if(DEFINED ENV{VCPKG_ROOT} AND NOT DEFINED CMAKE_TOOLCHAIN_FILE)
-    set(CMAKE_TOOLCHAIN_FILE "$ENV{VCPKG_ROOT}/scripts/buildsystems/vcpkg.cmake"
-        CACHE STRING "vcpkg toolchain file")
-endif()
 
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
