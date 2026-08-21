@@ -212,8 +212,19 @@ public:
    * key does not exist or if the type does not match.
    */
   template <typename T>
-  T get(const std::string &section, const std::string &key) const {
-    return std::get<T>(m_values.at(section).at(key));
+  std::optional<T> get(const std::string &section,
+                       const std::string &key) const {
+    auto sectionIt = m_values.find(section);
+    if (sectionIt == m_values.end()) {
+      return std::nullopt;
+    }
+
+    auto keyIt = sectionIt->second.find(key);
+    if (keyIt == sectionIt->second.end()) {
+      return std::nullopt;
+    }
+
+    return std::get<T>(keyIt->second);
   }
 
   /**
