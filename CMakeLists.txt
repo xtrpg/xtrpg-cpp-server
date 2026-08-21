@@ -87,9 +87,15 @@ if(UserModules_FOUND)
     endforeach()
 endif()
 
+# Config Server Target
+add_library(xtrpg_config STATIC
+    src/config/ConfigManager.cpp
+)
+target_include_directories(xtrpg_config PUBLIC include)
+
 # Executable Target
 add_executable(xtrpg_cpp_server apps/main.cpp)
-# target_link_libraries(xtrpg_cpp_server PRIVATE xtrpg_core)
+target_link_libraries(xtrpg_cpp_server PRIVATE xtrpg_config)
 target_include_directories(xtrpg_cpp_server PRIVATE ${CMAKE_BINARY_DIR}/generated)
 
 # If modules produce targets registered via xmpp_register_user_module
