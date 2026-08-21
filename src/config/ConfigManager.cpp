@@ -10,7 +10,6 @@ void ConfigManager::registerModule(const IModuleConfigProvider &provider) {
   ModuleConfig schema = provider.getConfigSchema();
   m_schemas[schema.name] = schema.options;
   for (const auto &opt : schema.options) {
-    // Apply lowest priority layers first: Module / Platform Defaults
     m_values[schema.name][opt.key] = {.systemDefault = opt.defaultValue};
   }
 }
