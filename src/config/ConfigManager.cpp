@@ -153,7 +153,7 @@ void ConfigManager::parseCLI(int argc, char *argv[]) {
 void ConfigManager::dumpResolvedConfig(std::ostream &os) const {
 
   for (const auto &[section, options] : m_values) {
-    os << "[" << section << "]\n";
+    os << "[" << section << "]" << std::endl;
     for (const auto &[key, value] : options) {
 
       // output the key's documentation/description if available
@@ -164,14 +164,14 @@ void ConfigManager::dumpResolvedConfig(std::ostream &os) const {
             schemaOptions.begin(), schemaOptions.end(),
             [&key](const ConfigOption &opt) { return opt.key == key; });
         if (optIt != schemaOptions.end()) {
-          os << "# " << optIt->description << "\n";
+          os << "# " << optIt->description << std::endl;
         }
       }
 
       // output the key and its corresponding value in a readable format
-      os << key << " = " << formatValue(value.getEffectiveValue()) << "\n";
+      os << key << " = " << formatValue(value.getEffectiveValue()) << std::endl;
     }
-    os << "\n";
+    os << std::endl;
   }
 }
 
