@@ -65,9 +65,9 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 WORKDIR /app
 
 # Copy built binary from builder stage
-COPY --from=builder /workspace/build/xtrpg-cpp-server /app/xtrpg-cpp-server
+COPY --from=builder /workspace/build/xtrpg_cpp_server /app/xtrpg_cpp_server
 
 # Expose C2S (5222) and S2S (5269) ports
 EXPOSE 5222 5269
 
-ENTRYPOINT ["/app/xtrpg-cpp-server"]
+ENTRYPOINT ["/app/xtrpg_cpp_server"]

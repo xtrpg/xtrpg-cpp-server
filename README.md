@@ -1,15 +1,103 @@
-# xtrpg-cpp-server
+# XTRPG C++ Server
+
 XMPP Server written in C++ built specifically around the XTRPG specifications.
 
-## Build Command across Operating Systems
+## 🛠️ Project Setup & Installation
+
+This project uses **CMake** (v3.20+) and **vcpkg** in **Manifest Mode** (`vcpkg.json`) to manage dependencies (such as Asio and OpenSSL) across Windows, Linux, and macOS.
+
+---
+
+### Prerequisites
+
+Before building the project, ensure you have the following installed:
+
+* **C++ Compiler:** Supporting C++20 standard
+  * **Windows:** Visual Studio 2022 (with *Desktop development with C++*)
+  * **Linux:** GCC 11+ or Clang 13+
+  * **macOS:** Xcode Command Line Tools (Clang)
+* **CMake:** Version 3.20 or higher
+* **Git**
+
+---
+
+### Installing vcpkg
+
+`vcpkg` is used to fetch and compile third-party libraries automatically during the CMake configuration step.
+
+#### **Windows (PowerShell)**
+
+```powershell
+# 1. Clone vcpkg to a persistent directory
+git clone https://github.com/microsoft/vcpkg.git C:\microsoft\vcpkg
+# 2. Run the bootstrap script to create vcpkg.exe
+cd C:\microsoft\vcpkg
+.\bootstrap-vcpkg.bat
+# 3. Set the environment variable for your current session / system
+$env:VCPKG_ROOT="C:\microsoft\vcpkg"
+[System.Environment]::SetEnvironmentVariable("VCPKG_ROOT", "C:\microsoft\vcpkg", [System.EnvironmentVariableTarget]::User)
+```
+
+#### **Linux / macOS (Bash / Zsh)**
 
 ```bash
-# Set VCPKG_ROOT environment variable pointing to your vcpkg installation
-# Linux / macOS / Windows
-cmake -B build -S . -DCMAKE_TOOLCHAIN_FILE=$VCPKG_ROOT/scripts/buildsystems/vcpkg.cmake
+# 1. Clone vcpkg
+git clone https://github.com/microsoft/vcpkg.git ~/vcpkg
+
+# 2. Run the bootstrap script
+cd ~/vcpkg
+./bootstrap-vcpkg.sh
+
+# 3. Export VCPKG_ROOT in your shell profile (~/.bashrc or ~/.zshrc)
+export VCPKG_ROOT="$HOME/vcpkg"
+```
+
+---
+
+### Generate Self-Signed SSL Certificates
+
+```bash
+# WINDOWS
+openssl req -x509 -newkey rsa:2048 -keyout server.key -out server.crt -days 365 -nodes -subj "/CN=localhost"
+
+# LINUX/MACOS
+openssl req -x509 -newkey rsa:2048 -keyout server.key -out server.crt -days 365 -nodes -subj "//CN=localhost"
+```
+
+
+---
+
+### Building the Project
+
+Since the project uses `vcpkg.json`, dependencies will automatically download and build during the initial CMake setup.
+
+#### **Step A: Configure CMake**
+
+Pass the `vcpkg` toolchain file during configuration:
+
+* **Linux / macOS:**
+  ```bash
+  cmake -B build -S . \
+    -DCMAKE_TOOLCHAIN_FILE=$VCPKG_ROOT/scripts/buildsystems/vcpkg.cmake \
+    -DCMAKE_BUILD_TYPE=Release
+  ```
+
+* **Windows (PowerShell):**
+  ```powershell
+  cmake -B build -S . -DCMAKE_TOOLCHAIN_FILE="$env:VCPKG_ROOT/scripts/buildsystems/vcpkg.cmake"
+  ```
+
+#### **Step B: Compile the Binary**
+
+```bash
 cmake --build build --config Release
 ```
 
+Once complete, the executable entry point will be output in:
+* **Single-config generators (Linux/macOS):** `./build/xtrpg_cpp_server`
+* **Multi-config generators (Windows/Visual Studio):** `.\build\Release\xtrpg_cpp_server.exe`
+
+For multi-config generators on Linux/macOS, use `./build/<Config>/xtrpg_cpp_server` instead.
 
 
 ## Dockerfile
@@ -19,5 +107,5 @@ cmake --build build --config Release
 docker build -t xmpp-builder .
 
 # Extract the compiled binary out of Docker onto the host OS
-docker run --rm -v $(pwd)/dist:/output xmpp-builder cp /app/xmpp_server /output/
+docker run --rm -v $(pwd)/dist:/output xmpp-builder cp /app/xtrpg_cpp_server /output/
 ```
