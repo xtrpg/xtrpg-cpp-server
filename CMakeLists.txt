@@ -87,18 +87,29 @@ if(UserModules_FOUND)
     endforeach()
 endif()
 
-# Config Server Target
+# Config LIB
 add_library(xtrpg_config STATIC
     src/config/ConfigManager.cpp
 )
 target_include_directories(xtrpg_config PUBLIC include)
 
+# XMPP LIB
+add_library(xtrpg_xmpp STATIC
+    src/xmpp/Jid.cpp
+)
+target_include_directories(xtrpg_xmpp PUBLIC include)
+
 # Executable Target
 add_executable(xtrpg_cpp_server apps/main.cpp)
-target_link_libraries(xtrpg_cpp_server PRIVATE xtrpg_config)
+target_link_libraries(xtrpg_cpp_server PRIVATE xtrpg_config xtrpg_xmpp)
 target_include_directories(xtrpg_cpp_server PRIVATE ${CMAKE_BINARY_DIR}/generated)
 
 # If modules produce targets registered via xmpp_register_user_module
 if(USER_MODULE_TARGETS)
     target_link_libraries(xtrpg_cpp_server PRIVATE ${USER_MODULE_TARGETS})
+endif()
+
+# Instruct MSVC to read and output source code strings as UTF-8
+if(MSVC)
+    target_compile_options(xtrpg_cpp_server PRIVATE /utf-8)
 endif()
