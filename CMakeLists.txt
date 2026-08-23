@@ -49,11 +49,6 @@ find_package(UserModules QUIET)
 # target_include_directories(xtrpg_core PUBLIC include)
 
 # Link imported targets across platforms
-# target_link_libraries(xtrpg_core PUBLIC
-#     asio::asio
-#     OpenSSL::SSL
-#     OpenSSL::Crypto
-# )
 
 # Platform-specific OS network primitives for raw sockets
 # if(WIN32)
@@ -93,6 +88,31 @@ add_library(xtrpg_config STATIC
 )
 target_include_directories(xtrpg_config PUBLIC include)
 
+# Network LIB
+add_library(xtrpg_network STATIC
+    src/network/SocketConnectionListener.cpp
+    src/network/TcpConnection.cpp
+)
+target_include_directories(xtrpg_network PUBLIC include)
+target_link_libraries(xtrpg_network PUBLIC
+    asio::asio
+    OpenSSL::SSL
+    OpenSSL::Crypto
+)
+if(WIN32)
+    # Windows-specific OS network primitives for raw sockets
+    # Define minimum Windows version (0x0601 = Windows 7, 0x0A00 = Windows 10)
+    # 0x0A00 unlocks modern Windows socket features for Asio
+    target_compile_definitions(xtrpg_network PUBLIC
+        _WIN32_WINNT=0x0A00
+        WINVER=0x0A00
+    )
+    target_link_libraries(xtrpg_network PUBLIC ws2_32 wsock32 crypt32)
+elseif(UNIX AND NOT APPLE)
+    # Platform-specific OS network primitives for raw sockets
+    target_link_libraries(xtrpg_network PUBLIC pthread dl)
+endif()
+
 # XMPP LIB
 add_library(xtrpg_xmpp STATIC
     src/xmpp/Jid.cpp
@@ -101,7 +121,7 @@ target_include_directories(xtrpg_xmpp PUBLIC include)
 
 # Executable Target
 add_executable(xtrpg_cpp_server apps/main.cpp)
-target_link_libraries(xtrpg_cpp_server PRIVATE xtrpg_config xtrpg_xmpp)
+target_link_libraries(xtrpg_cpp_server PRIVATE xtrpg_config xtrpg_network xtrpg_xmpp)
 target_include_directories(xtrpg_cpp_server PRIVATE ${CMAKE_BINARY_DIR}/generated)
 
 # If modules produce targets registered via xmpp_register_user_module
