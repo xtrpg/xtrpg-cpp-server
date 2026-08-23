@@ -48,15 +48,6 @@ find_package(UserModules QUIET)
 # )
 # target_include_directories(xtrpg_core PUBLIC include)
 
-# Link imported targets across platforms
-
-# Platform-specific OS network primitives for raw sockets
-# if(WIN32)
-#     target_link_libraries(xtrpg_core PUBLIC ws2_32 wsock32 crypt32)
-# elseif(UNIX AND NOT APPLE)
-#     target_link_libraries(xtrpg_core PUBLIC pthread dl)
-# endif()
-
 # Conditional Storage Compilation
 # if(ENABLE_STORAGE_SQLITE)
 #     find_package(SQLite3 REQUIRED)
