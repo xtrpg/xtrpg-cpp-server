@@ -8,7 +8,7 @@ endif()
 
 # If no variable is passed from the environment/command line, use a fallback
 if(NOT DEFINED BUILD_VERSION)
-    set(BUILD_VERSION "0.1.0")
+    set(BUILD_VERSION "0.0.0")
 endif()
 
 # Separate the SemVer string into major, minor, patch parts
