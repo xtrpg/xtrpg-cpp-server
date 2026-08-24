@@ -1,12 +1,13 @@
 #include <fstream>
 #include <iostream>
 
-#ifdef _WIN32
-#include <windows.h>
-#endif
-
 #include "version.hpp"
 #include "xtrpg/config/ConfigManager.hpp"
+
+#ifdef _WIN32
+#define _WINSOCKAPI_
+#include <windows.h>
+#endif
 
 int main(int argc, char *argv[]) {
 #ifdef _WIN32
