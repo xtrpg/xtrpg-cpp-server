@@ -4,6 +4,7 @@
 #include <cstdint>
 #include <iostream>
 #include <memory>
+#include <optional>
 #include <string>
 
 #include "xtrpg/interface/Observable.hpp"
@@ -17,22 +18,22 @@ public:
    * Instantiates a new listener instance.
    */
   SocketConnectionListener(asio::io_context &ioContext, uint16_t port)
-      : _ioContext(ioContext),
-        _ipv4Acceptor(ioContext,
-                      asio::ip::tcp::endpoint(asio::ip::tcp::v4(), port)),
-        _ipv6Acceptor(ioContext,
-                      asio::ip::tcp::endpoint(asio::ip::tcp::v6(), port)) {};
+      : _ioContext(ioContext), _port(port), _isStopped(true) {
+    this->initializeAcceptors();
+  }
 
   void start();
   void stop();
 
 private:
+  void initializeAcceptors();
   void acceptIPv4Connections();
   void acceptIPv6Connections();
 
   asio::io_context &_ioContext;
-  asio::ip::tcp::acceptor _ipv4Acceptor;
-  asio::ip::tcp::acceptor _ipv6Acceptor;
+  uint16_t _port;
+  std::optional<asio::ip::tcp::acceptor> _ipv4Acceptor;
+  std::optional<asio::ip::tcp::acceptor> _ipv6Acceptor;
   bool _isStopped{true};
 };
 } // namespace xtrpg::network

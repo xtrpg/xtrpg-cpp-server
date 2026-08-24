@@ -2,6 +2,46 @@
 
 namespace xtrpg::network {
 
+namespace {
+bool isListenerShutdownError(const std::error_code &ec) {
+  return ec == asio::error::operation_aborted ||
+         ec == asio::error::bad_descriptor;
+}
+} // namespace
+
+void SocketConnectionListener::initializeAcceptors() {
+  try {
+    asio::ip::tcp::acceptor ipv6Acceptor(
+        this->_ioContext,
+        asio::ip::tcp::endpoint(asio::ip::tcp::v6(), this->_port));
+
+    asio::ip::v6_only option(false);
+    ipv6Acceptor.set_option(option);
+    this->_ipv6Acceptor.emplace(std::move(ipv6Acceptor));
+
+    std::cout
+        << "[SocketConnectionListener] Enabled IPv6 dual-stack listener on "
+        << this->_port << std::endl;
+    return;
+  } catch (const std::exception &ex) {
+    std::cerr << "[SocketConnectionListener] Failed to open IPv6 dual-stack "
+                 "socket on "
+              << "port " << this->_port << ": " << ex.what() << std::endl;
+    this->_ipv6Acceptor.reset();
+  }
+
+  try {
+    this->_ipv4Acceptor.emplace(
+        this->_ioContext,
+        asio::ip::tcp::endpoint(asio::ip::tcp::v4(), this->_port));
+  } catch (const std::exception &ex) {
+    std::cerr
+        << "[SocketConnectionListener] Failed to open IPv4 socket on port "
+        << this->_port << ": " << ex.what() << std::endl;
+    this->_ipv4Acceptor.reset();
+  }
+}
+
 void SocketConnectionListener::start() {
   if (!this->_isStopped) {
     return;
@@ -9,13 +49,21 @@ void SocketConnectionListener::start() {
   this->_isStopped = false;
 
   std::cout << "[SocketConnectionListener] Listening for socket connections."
-            << std::endl
-            << "                           IPv4 on port "
-            << _ipv4Acceptor.local_endpoint().port() << "." << std::endl
-            << "                           IPv6 on port "
-            << _ipv6Acceptor.local_endpoint().port() << "." << std::endl;
-  this->acceptIPv4Connections();
-  this->acceptIPv6Connections();
+            << std::endl;
+
+  if (this->_ipv4Acceptor) {
+    std::cout << "                           IPv4 on port "
+              << this->_ipv4Acceptor->local_endpoint().port() << "."
+              << std::endl;
+    this->acceptIPv4Connections();
+  }
+
+  if (this->_ipv6Acceptor) {
+    std::cout << "                           IPv6 on port "
+              << this->_ipv6Acceptor->local_endpoint().port() << "."
+              << std::endl;
+    this->acceptIPv6Connections();
+  }
 }
 
 void SocketConnectionListener::stop() {
@@ -24,43 +72,65 @@ void SocketConnectionListener::stop() {
   this->_isStopped = true;
 
   std::error_code ec;
-  this->_ipv4Acceptor.close(ec);
-  this->_ipv6Acceptor.close(ec);
+
+  if (this->_ipv4Acceptor) {
+    this->_ipv4Acceptor->cancel(ec);
+    this->_ipv4Acceptor->close(ec);
+  }
+
+  if (this->_ipv6Acceptor) {
+    this->_ipv6Acceptor->cancel(ec);
+    this->_ipv6Acceptor->close(ec);
+  }
+
   std::cout << "[SocketConnectionListener] Stopped listening for socket "
                "connections."
             << std::endl;
-  ;
 }
 
 void SocketConnectionListener::acceptIPv4Connections() {
-  this->_ipv4Acceptor.async_accept([this](std::error_code ec,
-                                          asio::ip::tcp::socket socket) {
+  if (!this->_ipv4Acceptor) {
+    return;
+  }
+
+  this->_ipv4Acceptor->async_accept([this](std::error_code ec,
+                                           asio::ip::tcp::socket socket) {
     if (!ec) {
       std::cout << "[SocketConnectionListener] New incoming IPv4 connection."
                 << std::endl;
 
       auto tcpConnection = std::make_shared<TcpConnection>(std::move(socket));
       this->dispatchObservation(tcpConnection);
+    } else if (!isListenerShutdownError(ec)) {
+      std::cerr << "[SocketConnectionListener] IPv4 accept failed: "
+                << ec.message() << std::endl;
     }
 
-    if (!this->_isStopped) {
+    if (!this->_isStopped && !isListenerShutdownError(ec)) {
       this->acceptIPv4Connections();
     }
   });
 }
 
 void SocketConnectionListener::acceptIPv6Connections() {
-  this->_ipv6Acceptor.async_accept([this](std::error_code ec,
-                                          asio::ip::tcp::socket socket) {
+  if (!this->_ipv6Acceptor) {
+    return;
+  }
+
+  this->_ipv6Acceptor->async_accept([this](std::error_code ec,
+                                           asio::ip::tcp::socket socket) {
     if (!ec) {
       std::cout << "[SocketConnectionListener] New incoming IPv6 connection."
                 << std::endl;
 
       auto tcpConnection = std::make_shared<TcpConnection>(std::move(socket));
       this->dispatchObservation(tcpConnection);
+    } else if (!isListenerShutdownError(ec)) {
+      std::cerr << "[SocketConnectionListener] IPv6 accept failed: "
+                << ec.message() << std::endl;
     }
 
-    if (!this->_isStopped) {
+    if (!this->_isStopped && !isListenerShutdownError(ec)) {
       this->acceptIPv6Connections();
     }
   });
