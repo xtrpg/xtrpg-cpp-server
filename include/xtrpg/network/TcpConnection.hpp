@@ -43,7 +43,9 @@ public:
    * Constructs a TcpConnection with the given TCP socket.
    */
   explicit TcpConnection(asio::ip::tcp::socket tcpSocket)
-      : _tcpSocket(std::move(tcpSocket)) {}
+      : _tcpSocket(std::move(tcpSocket)) {
+    this->_strand.emplace(asio::make_strand(this->_tcpSocket.get_executor()));
+  }
 
   /**
    * Upgrades the TCP connection to a TLS connection using the provided SSL
@@ -67,6 +69,11 @@ public:
    * Checks if the connection is secure (SSL/TLS).
    */
   bool isSecure() const { return ConnectionState::SECURE == this->_state; }
+
+  /**
+   * Checks if the connection is closing.
+   */
+  bool isClosing() const { return ConnectionState::CLOSING == this->_state; }
 
   /**
    * Checks if the connection is open.
@@ -109,6 +116,12 @@ private:
    * The underlying TCP socket used for the connection.
    */
   asio::ip::tcp::socket _tcpSocket;
+
+  /**
+   * Serializes access to the socket and connection state so writes, upgrades,
+   * and closes cannot race against each other.
+   */
+  std::optional<asio::strand<asio::any_io_executor>> _strand;
 
   /**
    * The optional SSL stream used for secure communication. It is only
