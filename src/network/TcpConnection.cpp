@@ -2,13 +2,8 @@
 
 namespace xtrpg::network {
 
-void TcpConnection::upgradeToTls(asio::ssl::context &ssl_ctx) {
-  if (this->_isClosed) {
-    // the TCP connection is closed
-    std::cerr << "Unable to upgrade a closed TCP connection to TLS."
-              << std::endl;
-    return;
-  }
+void TcpConnection::upgrade(asio::ssl::context &ssl_ctx) {
+  this->assertOpenConnection();
 
   // Wrap the existing raw socket into Asio SSL stream
   this->_sslStream.emplace(std::move(this->_tcpSocket), ssl_ctx);
@@ -20,19 +15,14 @@ void TcpConnection::upgradeToTls(asio::ssl::context &ssl_ctx) {
           std::cerr << "TLS Handshake Failed: " << ec.message() << "\n";
           return;
         }
-
-        this->_isTlsActive = true;
+        this->__state = ConnectionState::SECURE;
       });
 }
 
 void TcpConnection::write(std::string_view data) {
-  if (this->_isClosed) {
-    // the TCP connection is closed
-    std::cerr << "Unable to write to a closed TCP connection." << std::endl;
-    return;
-  }
+  this->assertOpenConnection();
 
-  if (this->_isTlsActive && this->_sslStream) {
+  if (this->isSecure() && this->_sslStream) {
     // Writing to the secure stream;
     asio::async_write(*this->_sslStream, asio::buffer(data),
                       [](std::error_code, std::size_t) {});
@@ -45,14 +35,10 @@ void TcpConnection::write(std::string_view data) {
 }
 
 void TcpConnection::close() {
-  if (this->_isClosed) {
-    std::cerr << "TCP Connection is already closed" << std::endl;
-    return;
-  }
+  this->assertOpenConnection();
 
-  this->_isClosed = true;
-
-  if (this->_isTlsActive && this->_sslStream) {
+  if (this->isSecure() && this->_sslStream) {
+    this->_state = ConnectionState::CLOSING;
     this->_sslStream->lowest_layer().cancel();
 
     auto self = shared_from_this();
@@ -63,12 +49,17 @@ void TcpConnection::close() {
 
       // Close the socket to free the file descriptor
       this->_sslStream->lowest_layer().close();
+
+      this->_state = ConnectionState::CLOSED;
     });
     return;
   }
 
+  this->_state = ConnectionState::CLOSING;
   this->_tcpSocket.shutdown(asio::ip::tcp::socket::shutdown_both);
   this->_tcpSocket.close();
+
+  this->_state = ConnectionState::CLOSED;
 }
 
 } // namespace xtrpg::network
