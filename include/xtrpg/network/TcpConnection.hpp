@@ -42,7 +42,7 @@ public:
   /**
    * Constructs a TcpConnection with the given TCP socket.
    */
-  explicit TcpConnection(asio::ip::tcp::socket &tcpSocket)
+  explicit TcpConnection(asio::ip::tcp::socket tcpSocket)
       : _tcpSocket(std::move(tcpSocket)) {}
 
   /**

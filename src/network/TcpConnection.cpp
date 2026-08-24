@@ -15,7 +15,7 @@ void TcpConnection::upgrade(asio::ssl::context &ssl_ctx) {
           std::cerr << "TLS Handshake Failed: " << ec.message() << "\n";
           return;
         }
-        this->__state = ConnectionState::SECURE;
+        this->_state = ConnectionState::SECURE;
       });
 }
 
