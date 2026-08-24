@@ -22,6 +22,8 @@ public:
     this->initializeAcceptors();
   }
 
+  ~SocketConnectionListener() { this->stop(); }
+
   void start();
   void stop();
 
