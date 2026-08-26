@@ -25,7 +25,9 @@ public:
   /**
    * Returns the type of this node.
    */
-  XmlNodeType type() const { return this->_type; };
+  XmlNodeType getNodeType() const { return this->_type; };
+
+  bool isType(XmlNodeType type) const { return this->_type == type; }
 
 private:
   XmlNodeType _type;
