@@ -1,5 +1,6 @@
 #pragma once
 
+#include <algorithm>
 #include <iostream>
 #include <optional>
 #include <stdexcept>
@@ -7,6 +8,7 @@
 #include <string_view>
 #include <unordered_map>
 #include <utility>
+#include <vector>
 
 #include "xtrpg/xml/node/XmlCharacter.hpp"
 #include "xtrpg/xml/node/XmlName.hpp"
@@ -72,10 +74,20 @@ public:
   }
 
   /**
-   * Serializes the node into an XML formatted string.
+   * Serializes attributes into an XML formatted string in key order.
    */
   void serialize(std::ostream &os) const {
+    std::vector<std::pair<std::string_view, std::string_view>> attributes;
+    attributes.reserve(this->_attributes.size());
     for (const auto &[attr, val] : this->_attributes) {
+      attributes.emplace_back(attr, val);
+    }
+    std::sort(attributes.begin(), attributes.end(),
+              [](const auto &left, const auto &right) {
+                return left.first < right.first;
+              });
+
+    for (const auto &[attr, val] : attributes) {
       os << " " << attr << "=\"";
       // Escape attribute values
       for (char c : val) {

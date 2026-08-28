@@ -4,8 +4,8 @@
 #include "xtrpg/xml/node/INode.hpp"
 #include "xtrpg/xml/node/ITagname.hpp"
 #include "xtrpg/xml/node/NodeType.hpp"
-#include <string_view>
 #include <stdexcept>
+#include <string_view>
 #include <utility>
 
 namespace xtrpg::xml::node {
@@ -76,16 +76,15 @@ private:
     for (const unsigned char character : encoding) {
       const bool isLetter = (character >= 'A' && character <= 'Z') ||
                             (character >= 'a' && character <= 'z');
-      const bool isAllowed = isLetter || (character >= '0' && character <= '9') ||
-                             character == '.' || character == '_' ||
-                             character == '-';
+      const bool isAllowed =
+          isLetter || (character >= '0' && character <= '9') ||
+          character == '.' || character == '_' || character == '-';
       if (!isAllowed) {
         return false;
       }
     }
     const unsigned char first = static_cast<unsigned char>(encoding.front());
-    return (first >= 'A' && first <= 'Z') ||
-           (first >= 'a' && first <= 'z');
+    return (first >= 'A' && first <= 'Z') || (first >= 'a' && first <= 'z');
   }
 };
 
