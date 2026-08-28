@@ -4,7 +4,9 @@
 #include <memory>
 #include <optional>
 #include <string>
+#include <stdexcept>
 #include <unordered_map>
+#include <unordered_set>
 #include <vector>
 
 #include "xtrpg/xml/node/IAttributes.hpp"
@@ -33,9 +35,14 @@ public:
 
   /**
    * Appends a given child node.
+   *
+   * @throws std::invalid_argument if the child already contains this node.
    */
   void append(std::shared_ptr<INode> child) {
     if (child) {
+      if (containsNode(child.get(), this)) {
+        throw std::invalid_argument("Cannot create a cycle in XML nodes");
+      }
       this->_children.push_back(std::move(child));
     }
   }
@@ -68,6 +75,35 @@ public:
   }
 
 private:
+  /**
+   * Checks whether target is reachable through an XML tag node subtree.
+   */
+  static bool containsNode(const INode *root, const INode *target) {
+    std::vector<const INode *> pending{root};
+    std::unordered_set<const INode *> visited;
+
+    while (!pending.empty()) {
+      const INode *current = pending.back();
+      pending.pop_back();
+
+      if (!current || !visited.insert(current).second) {
+        continue;
+      }
+      if (current == target) {
+        return true;
+      }
+
+      const auto *tag = dynamic_cast<const XmlTagNode *>(current);
+      if (!tag) {
+        continue;
+      }
+      for (const auto &child : tag->_children) {
+        pending.push_back(child.get());
+      }
+    }
+    return false;
+  }
+
   std::vector<std::shared_ptr<INode>> _children;
 };
 
