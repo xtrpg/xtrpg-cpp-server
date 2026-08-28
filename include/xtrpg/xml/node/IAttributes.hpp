@@ -71,6 +71,8 @@ public:
           os << "&quot;";
         else if (c == '&')
           os << "&amp;";
+        else if (c == '<')
+          os << "&lt;";
         else
           os << c;
       }
