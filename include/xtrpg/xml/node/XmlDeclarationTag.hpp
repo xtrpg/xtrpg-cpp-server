@@ -4,6 +4,7 @@
 #include "xtrpg/xml/node/INode.hpp"
 #include "xtrpg/xml/node/ITagname.hpp"
 #include "xtrpg/xml/node/NodeType.hpp"
+#include <string_view>
 #include <stdexcept>
 #include <utility>
 

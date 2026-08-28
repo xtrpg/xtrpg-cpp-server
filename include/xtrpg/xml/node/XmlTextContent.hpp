@@ -3,8 +3,10 @@
 #include "xtrpg/xml/node/INode.hpp"
 #include "xtrpg/xml/node/NodeType.hpp"
 #include "xtrpg/xml/node/XmlCharacter.hpp"
+#include <iostream>
 #include <stdexcept>
 #include <string>
+#include <utility>
 
 namespace xtrpg::xml::node {
 
