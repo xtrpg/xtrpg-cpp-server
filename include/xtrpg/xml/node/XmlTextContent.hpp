@@ -2,6 +2,8 @@
 
 #include "xtrpg/xml/node/INode.hpp"
 #include "xtrpg/xml/node/NodeType.hpp"
+#include "xtrpg/xml/node/XmlCharacter.hpp"
+#include <stdexcept>
 #include <string>
 
 namespace xtrpg::xml::node {
@@ -21,7 +23,11 @@ public:
    * node.
    */
   explicit XmlTextContent(std::string content)
-      : INode(NodeType::TEXT_CONTENT), _content(std::move(content)) {}
+      : INode(NodeType::TEXT_CONTENT), _content(std::move(content)) {
+    if (!isValidXmlCharacterData(this->_content)) {
+      throw std::invalid_argument("Invalid character in XML text content");
+    }
+  }
 
   /**
    * Returns a reference to the text content stored on this node.
@@ -32,13 +38,21 @@ public:
    * Sets the text content stored on this node, overriding any previous content.
    */
   void content(std::string withContent) {
+    if (!isValidXmlCharacterData(withContent)) {
+      throw std::invalid_argument("Invalid character in XML text content");
+    }
     this->_content = std::move(withContent);
   }
 
   /**
    * Appends the provided string to the end of the stored text content.
    */
-  void append(const std::string &withText) { this->_content += withText; }
+  void append(const std::string &withText) {
+    if (!isValidXmlCharacterData(withText)) {
+      throw std::invalid_argument("Invalid character in XML text content");
+    }
+    this->_content += withText;
+  }
 
   /**
    * Serializes the text content into the provided output stream, automatically

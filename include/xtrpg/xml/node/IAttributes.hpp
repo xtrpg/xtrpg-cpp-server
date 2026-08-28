@@ -6,6 +6,7 @@
 #include <string>
 #include <unordered_map>
 
+#include "xtrpg/xml/node/XmlCharacter.hpp"
 #include "xtrpg/xml/node/XmlName.hpp"
 
 namespace xtrpg::xml::node {
@@ -27,6 +28,9 @@ public:
   void setAttribute(std::string_view key, std::string_view value) {
     if (!isValidXmlName(key)) {
       throw std::invalid_argument("Invalid XML attribute name");
+    }
+    if (!isValidXmlCharacterData(value)) {
+      throw std::invalid_argument("Invalid character in XML attribute value");
     }
     this->_attributes[std::string(key)] = std::string(value);
   }
