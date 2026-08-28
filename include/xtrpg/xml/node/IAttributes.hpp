@@ -83,6 +83,12 @@ public:
           os << "&amp;";
         else if (c == '<')
           os << "&lt;";
+        else if (c == '\t')
+          os << "&#x9;";
+        else if (c == '\n')
+          os << "&#xA;";
+        else if (c == '\r')
+          os << "&#xD;";
         else
           os << c;
       }
