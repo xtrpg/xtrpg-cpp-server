@@ -93,14 +93,13 @@ inline XmlTextContent &operator<<(XmlTextContent &node,
 }
 
 /**
- * Stream extraction overload: reads line-by-line (standard >> behavior) and
- * appends to the content of the node.
+ * Stream extraction overload: reads one line and appends the characters read
+ * to the content of the node without adding a delimiter.
  */
 inline std::istream &operator>>(std::istream &is, XmlTextContent &node) {
   std::string temp;
   if (std::getline(is, temp)) {
     node.append(temp);
-    node.append("\n");
   }
   return is;
 }
