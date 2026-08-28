@@ -72,12 +72,6 @@ public:
       case '&':
         os << "&amp;";
         break;
-      case '"':
-        os << "&quot;";
-        break;
-      case '\'':
-        os << "&apos;";
-        break;
       default:
         os << c;
         break;
