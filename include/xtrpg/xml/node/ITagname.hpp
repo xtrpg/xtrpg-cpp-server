@@ -1,6 +1,10 @@
 #pragma once
 
+#include <stdexcept>
 #include <string>
+#include <utility>
+
+#include "xtrpg/xml/node/XmlName.hpp"
 
 namespace xtrpg::xml::node {
 
@@ -12,7 +16,11 @@ public:
   /**
    * Constructor that takes in the canonical name for the tag.
    */
-  explicit ITagname(std::string tagname) : _tagname(std::move(tagname)) {}
+  explicit ITagname(std::string tagname) : _tagname(std::move(tagname)) {
+    if (!isValidXmlName(this->_tagname)) {
+      throw std::invalid_argument("Invalid XML tag name");
+    }
+  }
 
   /**
    * Virtual destructor.

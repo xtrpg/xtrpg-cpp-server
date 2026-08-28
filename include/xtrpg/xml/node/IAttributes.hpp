@@ -2,8 +2,11 @@
 
 #include <iostream>
 #include <optional>
+#include <stdexcept>
 #include <string>
 #include <unordered_map>
+
+#include "xtrpg/xml/node/XmlName.hpp"
 
 namespace xtrpg::xml::node {
 
@@ -22,6 +25,9 @@ public:
    * Sets an attribute key/value pair.
    */
   void setAttribute(std::string_view key, std::string_view value) {
+    if (!isValidXmlName(key)) {
+      throw std::invalid_argument("Invalid XML attribute name");
+    }
     this->_attributes[std::string(key)] = std::string(value);
   }
 
@@ -84,4 +90,4 @@ private:
   std::unordered_map<std::string, std::string> _attributes;
 };
 
-} // namespace xtrpg::xml
+} // namespace xtrpg::xml::node
