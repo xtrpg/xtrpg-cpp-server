@@ -36,9 +36,9 @@ public:
   }
 
   /**
-   * Returns the value associated with the given attribute key.
+   * Returns a copy of the value associated with the given attribute key.
    */
-  std::optional<std::string_view> getAttribute(const std::string &key) const {
+  std::optional<std::string> getAttribute(const std::string &key) const {
     auto it = this->_attributes.find(key);
     if (it != this->_attributes.end()) {
       return it->second;
