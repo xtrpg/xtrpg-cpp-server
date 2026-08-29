@@ -27,7 +27,7 @@ public:
   /**
    * Sets an attribute key/value pair.
    */
-  void setAttribute(std::string_view key, std::string_view value) {
+  virtual void setAttribute(std::string_view key, std::string_view value) {
     if (!isValidXmlName(key)) {
       throw std::invalid_argument("Invalid XML attribute name");
     }

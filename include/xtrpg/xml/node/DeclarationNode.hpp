@@ -27,35 +27,49 @@ public:
   }
 
   /**
-   * Serializes the node into an XML formatted string.
+   * Sets an attribute key/value pair with XML declaration-specific validation.
+   * Only allows 'version', 'encoding', and 'standalone' attributes.
+   * Version must be '1.0' or '1.1', encoding must be a valid encoding name,
+   * and standalone must be 'yes' or 'no'.
+   *
+   * @throws std::invalid_argument if the attribute is invalid for XML
+   * declarations
    */
-  void serialize(std::ostream &os) const override {
-    const auto version = this->getAttribute("version");
-    if (!version || (*version != "1.0" && *version != "1.1")) {
-      throw std::invalid_argument(
-          "XML declaration requires version 1.0 or 1.1");
-    }
-
-    bool hasInvalidAttribute = false;
-    this->forEachAttribute([&](std::string_view key, std::string_view) {
-      if (key != "version" && key != "encoding" && key != "standalone") {
-        hasInvalidAttribute = true;
+  void setAttribute(std::string_view key, std::string_view value) override {
+    // Validate XML declaration-specific attributes
+    if (key == "version") {
+      if (value != "1.0" && value != "1.1") {
+        throw std::invalid_argument(
+            "XML declaration version must be '1.0' or '1.1'");
       }
-    });
-    if (hasInvalidAttribute) {
-      throw std::invalid_argument("Invalid XML declaration attribute");
-    }
-
-    if (const auto encoding = this->getAttribute("encoding")) {
-      if (!isValidEncodingName(*encoding)) {
+    } else if (key == "encoding") {
+      if (!isValidEncodingName(value)) {
         throw std::invalid_argument("Invalid XML declaration encoding");
       }
-    }
-    if (const auto standalone = this->getAttribute("standalone")) {
-      if (*standalone != "yes" && *standalone != "no") {
+    } else if (key == "standalone") {
+      if (value != "yes" && value != "no") {
         throw std::invalid_argument(
             "XML declaration standalone must be 'yes' or 'no'");
       }
+    } else {
+      throw std::invalid_argument(
+          "XML declaration does not support attribute: " + std::string(key));
+    }
+
+    // Call parent implementation
+    IAttributes::setAttribute(key, value);
+  }
+
+  /**
+   * Serializes the node into an XML formatted string.
+   * Note: All attribute validation occurs in setAttribute(), so this method
+   * assumes a valid state.
+   */
+  void serialize(std::ostream &os) const override {
+    const auto version = this->getAttribute("version");
+    if (!version) {
+      throw std::invalid_argument(
+          "XML declaration requires a 'version' attribute");
     }
 
     os << "<?xml version=\"" << *version << "\"";
