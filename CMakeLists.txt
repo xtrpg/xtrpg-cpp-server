@@ -25,6 +25,8 @@ configure_file("generated/version.hpp.in" ${CMAKE_BINARY_DIR}/generated/version.
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
+option(ENABLE_XMPP_JID "Build XMPP JID support" ON)
+
 # Find Packages - vcpkg provides standard CMake target configs
 find_package(asio CONFIG REQUIRED)
 find_package(OpenSSL REQUIRED)
@@ -43,24 +45,6 @@ find_package(UserModules QUIET)
 # option(ENABLE_STORAGE_SQLITE "Include SQLite storage backend" OFF)
 # option(ENABLE_STORAGE_POSTGRES "Include PostgreSQL storage backend" OFF)
 
-# Core Server Target
-# add_library(xtrpg_core STATIC
-# )
-# target_include_directories(xtrpg_core PUBLIC include)
-
-# Conditional Storage Compilation
-# if(ENABLE_STORAGE_SQLITE)
-#     find_package(SQLite3 REQUIRED)
-#     target_sources(xtrpg_core PRIVATE src/storage/SQLiteBackend.cpp)
-#     target_compile_definitions(xtrpg_core PUBLIC HAS_STORAGE_SQLITE)
-#     target_link_libraries(xtrpg_core PRIVATE SQLite::SQLite3)
-# endif()
-
-# if(ENABLE_STORAGE_MEMORY)
-#     target_sources(xtrpg_core PRIVATE src/storage/MemoryBackend.cpp)
-#     target_compile_definitions(xtrpg_core PUBLIC HAS_STORAGE_MEMORY)
-# endif()
-
 # Include discovered modules into the build
 if(UserModules_FOUND)
     message(STATUS "Integrating User Modules:")
@@ -73,19 +57,27 @@ if(UserModules_FOUND)
     endforeach()
 endif()
 
-# Config LIB
-add_library(xtrpg_config STATIC
-    src/config/ConfigManager.cpp
+# Single executable target
+add_executable(xtrpg_cpp_server
+    apps/main.cpp
 )
-target_include_directories(xtrpg_config PUBLIC include)
+target_include_directories(xtrpg_cpp_server PRIVATE
+    include
+    ${CMAKE_BINARY_DIR}/generated
+)
 
-# Network LIB
-add_library(xtrpg_network STATIC
+target_sources(xtrpg_cpp_server PRIVATE
+    src/config/ConfigManager.cpp
     src/network/SocketConnectionListener.cpp
     src/network/TcpConnection.cpp
+    src/xml/tokenizer/XmlStreamTokenizer.cpp
+    src/xmpp/ClientConnectionManager.cpp
+    src/xmpp/session/ClientSession.cpp
+    src/xmpp/Jid.cpp
 )
-target_include_directories(xtrpg_network PUBLIC include)
-target_link_libraries(xtrpg_network PUBLIC
+
+
+target_link_libraries(xtrpg_cpp_server PRIVATE
     asio::asio
     OpenSSL::SSL
     OpenSSL::Crypto
@@ -94,26 +86,15 @@ if(WIN32)
     # Windows-specific OS network primitives for raw sockets
     # Define minimum Windows version (0x0601 = Windows 7, 0x0A00 = Windows 10)
     # 0x0A00 unlocks modern Windows socket features for Asio
-    target_compile_definitions(xtrpg_network PUBLIC
+    target_compile_definitions(xtrpg_cpp_server PRIVATE
         _WIN32_WINNT=0x0A00
         WINVER=0x0A00
     )
-    target_link_libraries(xtrpg_network PUBLIC ws2_32 wsock32 crypt32)
+    target_link_libraries(xtrpg_cpp_server PRIVATE ws2_32 wsock32 crypt32)
 elseif(UNIX AND NOT APPLE)
     # Platform-specific OS network primitives for raw sockets
-    target_link_libraries(xtrpg_network PUBLIC pthread dl)
+    target_link_libraries(xtrpg_cpp_server PRIVATE pthread dl)
 endif()
-
-# XMPP LIB
-add_library(xtrpg_xmpp STATIC
-    src/xmpp/Jid.cpp
-)
-target_include_directories(xtrpg_xmpp PUBLIC include)
-
-# Executable Target
-add_executable(xtrpg_cpp_server apps/main.cpp)
-target_link_libraries(xtrpg_cpp_server PRIVATE xtrpg_config xtrpg_network xtrpg_xmpp)
-target_include_directories(xtrpg_cpp_server PRIVATE ${CMAKE_BINARY_DIR}/generated)
 
 # If modules produce targets registered via xmpp_register_user_module
 if(USER_MODULE_TARGETS)

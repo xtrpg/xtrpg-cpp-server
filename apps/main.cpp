@@ -1,13 +1,35 @@
+#include <atomic>
 #include <fstream>
 #include <iostream>
+#include <memory>
+#include <signal.h>
+#include <thread>
+#include <vector>
+
+#include <asio.hpp>
 
 #include "version.hpp"
 #include "xtrpg/config/ConfigManager.hpp"
+#include "xtrpg/interface/Observer.hpp"
+#include "xtrpg/network/SocketConnectionListener.hpp"
+#include "xtrpg/xml/tokenizer/XmlStreamTokenizer.hpp"
+#include "xtrpg/xmpp/ClientConnectionManager.hpp"
+#include "xtrpg/xmpp/session/ClientSession.hpp"
 
 #ifdef _WIN32
 #define _WINSOCKAPI_
 #include <windows.h>
 #endif
+
+// Global flag for signal handling
+std::atomic<bool> g_shouldShutdown{false};
+
+// Signal handler for graceful shutdown
+void signalHandler(int signal) {
+  std::cout << "\nReceived signal " << signal
+            << ", initiating graceful shutdown..." << std::endl;
+  g_shouldShutdown = true;
+}
 
 int main(int argc, char *argv[]) {
 #ifdef _WIN32
@@ -45,10 +67,78 @@ int main(int argc, char *argv[]) {
     }
     configManager.parseCLI(argc, argv);
 
+    // Initialize Asio IO context for async I/O operations
+    asio::io_context ioContext;
+
+    // Create temporary connection handler to listen for incoming connections
+    // and create ClientSession instances
+    xtrpg::xmpp::ClientConnectionManager connectionManager(ioContext);
+
+    // Get the port from configuration (default 5222 for XMPP C2S)
+    auto portValue = configManager.get<int64_t>("c2s", "port").value_or(5222);
+    uint16_t listeningPort = static_cast<uint16_t>(portValue);
+
+    // Initialize socket connection listener
+    std::cout << "[INFO] Starting XMPP Client-to-Server (C2S) listener on port "
+              << listeningPort << std::endl;
+    xtrpg::network::SocketConnectionListener listener(ioContext, listeningPort);
+
+    // Register connection handler as observer for incoming connections
+    listener.setObserver(&connectionManager);
+
+    // Start accepting connections
+    listener.start();
+
+    // Set up signal handlers for graceful shutdown (SIGINT and SIGTERM)
+#ifdef _WIN32
+    signal(SIGINT, signalHandler);
+    signal(SIGTERM, signalHandler);
+#else
+    signal(SIGINT, signalHandler);
+    signal(SIGTERM, signalHandler);
+    signal(SIGHUP, signalHandler);
+#endif
+
+    std::cout << "[INFO] Server running. Press Ctrl+C to shutdown."
+              << std::endl;
+
+    // Run IO context in a thread pool for handling async operations
+    std::vector<std::thread> ioThreads;
+    const size_t threadCount = std::thread::hardware_concurrency();
+    for (size_t i = 0; i < threadCount; ++i) {
+      ioThreads.emplace_back([&ioContext]() { ioContext.run(); });
+    }
+
+    // Main thread: wait for shutdown signal
+    while (!g_shouldShutdown) {
+      std::this_thread::sleep_for(std::chrono::milliseconds(100));
+    }
+
+    // Graceful shutdown: stop listener and wait for pending operations
+    std::cout << "[INFO] Stopping listener..." << std::endl;
+    listener.stop();
+    listener.setObserver(nullptr);
+
+    std::cout << "[INFO] Shutting down IO context..." << std::endl;
+    ioContext.stop();
+
+    // Wait for all IO threads to complete
+    for (auto &thread : ioThreads) {
+      if (thread.joinable()) {
+        thread.join();
+      }
+    }
+
+    std::cout << "[INFO] Server shutdown complete." << std::endl;
+
   } catch (const std::exception &e) {
     std::cerr << "EXCEPTION OCCURRED" << std::endl
               << "Application closing die to \"" << e.what() << "\"."
               << std ::endl;
+    return 1;
+  } catch (...) {
+    std::cerr << "UNEXPECTED EXCEPTION OCCURRED" << std::endl
+              << "Application closing." << std ::endl;
     return 1;
   }
 

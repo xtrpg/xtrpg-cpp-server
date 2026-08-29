@@ -36,7 +36,7 @@ enum class ConnectionState {
  * Represents a TCP connection that can be upgraded to TLS. It provides methods
  * to write data to the connection, read data from the connection and close it.
  */
-class TcpConnection : public std::enable_shared_from_this<TcpConnection> {
+class TcpConnection {
 
 public:
   /**
@@ -52,6 +52,12 @@ public:
    * context.
    */
   void upgrade(asio::ssl::context &ssl_ctx);
+
+  /**
+   * Async read from the underlying tcp connection, calling the provided lambda
+   * function with a new istream of the incoming stream data.
+   */
+  void read(std::function<void(std::istream &)> callback);
 
   /**
    * Writes data to the connection. If the connection is closed, it will throw

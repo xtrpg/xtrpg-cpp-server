@@ -7,6 +7,7 @@
 #include <vector>
 
 #include "xtrpg/xml/tokenizer/TokenizationError.hpp"
+#include "xtrpg/xml/tokenizer/XmlToken.hpp"
 #include "xtrpg/xml/tokenizer/XmlTokenListener.hpp"
 
 #ifndef __TOKENIZER_MAX_BUFFER_SIZE_IN_CHARS
@@ -20,19 +21,25 @@ namespace xtrpg::xml::tokenizer {
  */
 class XmlStreamTokenizer {
 public:
+  ~XmlStreamTokenizer() {
+    if (nullptr != this->_ptrObserver) {
+      std::cerr << "Observable not removed from an instance of "
+                   "XmlStreamTokenizer. This may lead to "
+                   "memory leaks."
+                << std::endl;
+    }
+  };
+
   /**
    * Consumes the data on the provided stream until it's exhausted.
    */
   void process(std::istream &stream);
 
-  /**
-   * Defines a instance to act as the listener for this class.
-   */
-  void setListener(std::shared_ptr<XmlTokenListener> listener) {
-    _listener = listener;
-  }
+  void setObserver(XmlTokenListener *ptr) { this->_ptrObserver = ptr; }
 
 private:
+  XmlTokenListener *_ptrObserver = nullptr;
+
   enum class State {
     TEXT,
     AFTER_OPEN,
@@ -69,7 +76,10 @@ private:
 
   TokenizationError _error{TokenizationError::NONE};
 
-  std::weak_ptr<XmlTokenListener> _listener;
+  /**
+   * The current token being parsed.
+   */
+  XmlToken _currentToken{};
 };
 
 } // namespace xtrpg::xml::tokenizer
