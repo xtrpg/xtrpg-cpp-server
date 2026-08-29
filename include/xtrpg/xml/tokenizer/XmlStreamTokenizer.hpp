@@ -28,7 +28,8 @@ public:
   /**
    * Defines a instance to act as the listener for this class.
    */
-  void setListener(std::shared_ptr<XmlTokenListener> listener) {
+  void setListener(XmlTokenListener *listener) {
+    std::cout << "[XmlStreamTokenizer] Assign listener." << std::endl;
     _listener = listener;
   }
 
@@ -69,7 +70,7 @@ private:
 
   TokenizationError _error{TokenizationError::NONE};
 
-  std::weak_ptr<XmlTokenListener> _listener;
+  XmlTokenListener *_listener = nullptr;
 };
 
 } // namespace xtrpg::xml::tokenizer

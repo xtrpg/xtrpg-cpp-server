@@ -12,7 +12,6 @@
 #include <vector>
 
 #include "xtrpg/xml/node/IAttributes.hpp"
-#include "xtrpg/xml/node/INode.hpp"
 #include "xtrpg/xml/node/ITagname.hpp"
 #include "xtrpg/xml/node/NodeContainer.hpp"
 #include "xtrpg/xml/node/NodeType.hpp"
@@ -23,16 +22,13 @@ namespace xtrpg::xml::node {
 /**
  * Represents an XML element with a tag name, attributes, and child nodes.
  */
-class TagNode : public INode,
-                public ITagname,
-                public IAttributes,
-                public NodeContainer {
+class TagNode : public ITagname, public IAttributes, public NodeContainer {
 public:
   /**
    * Inline constructor that accepts a tag name.
    */
   explicit TagNode(std::string name)
-      : INode(NodeType::TAG), ITagname(name), IAttributes(), NodeContainer() {}
+      : ITagname(name), IAttributes(), NodeContainer(NodeType::TAG) {}
 
   /**
    * Explicitly defaulted copy constructor.

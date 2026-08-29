@@ -70,8 +70,11 @@ target_sources(xtrpg_cpp_server PRIVATE
     src/config/ConfigManager.cpp
     src/network/SocketConnectionListener.cpp
     src/network/TcpConnection.cpp
+    src/xml/tokenizer/XmlStreamTokenizer.cpp
     src/xmpp/ClientConnectionManager.cpp
-    src/xmpp/Jid.cpp)
+    src/xmpp/session/ClientSession.cpp
+    src/xmpp/Jid.cpp
+)
 
 
 target_link_libraries(xtrpg_cpp_server PRIVATE

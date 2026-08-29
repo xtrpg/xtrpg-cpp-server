@@ -20,22 +20,21 @@ namespace xtrpg::xml::tokenizer {
 void XmlStreamTokenizer::process(std::istream &stream) {
   // If the tokenizer is already in an error state then re-issue the same error.
   if (TokenizationError::NONE != this->_error) {
-    if (const auto listener = this->_listener.lock()) {
-      listener->onError(this->_error);
+    if (nullptr == this->_listener) {
+      this->_listener->onError(this->_error);
     }
     return;
   }
 
-  const auto listener = this->_listener.lock();
   const auto fail = [&](const TokenizationError error) {
     this->_error = error;
-    if (listener) {
-      listener->onError(error);
+    if (nullptr != this->_listener) {
+      this->_listener->onError(error);
     }
   };
   const auto appendText = [&](const std::string_view text) {
-    if (!text.empty() && listener) {
-      listener->appendText(text);
+    if (!text.empty() && nullptr != this->_listener) {
+      this->_listener->appendText(text);
     }
   };
   const auto openStartTag = [&]() {
@@ -43,8 +42,8 @@ void XmlStreamTokenizer::process(std::istream &stream) {
       fail(TokenizationError::MALFORMED_INPUT);
       return;
     }
-    if (listener) {
-      listener->openTag(this->_buffer);
+    if (nullptr != this->_listener) {
+      this->_listener->openTag(this->_buffer);
     }
     this->_buffer.clear();
   };
@@ -53,8 +52,8 @@ void XmlStreamTokenizer::process(std::istream &stream) {
       fail(TokenizationError::MALFORMED_INPUT);
       return;
     }
-    if (listener) {
-      listener->openDeclaration(this->_buffer);
+    if (nullptr != this->_listener) {
+      this->_listener->openDeclaration(this->_buffer);
     }
     this->_buffer.clear();
   };
@@ -180,8 +179,8 @@ void XmlStreamTokenizer::process(std::istream &stream) {
         break;
       case State::ATTRIBUTE_VALUE:
         if (character == this->_quote) {
-          if (listener) {
-            listener->setAttribute(this->_attributeName, this->_buffer);
+          if (nullptr != this->_listener) {
+            this->_listener->setAttribute(this->_attributeName, this->_buffer);
           }
           this->_attributeName.clear();
           this->_buffer.clear();
@@ -205,8 +204,8 @@ void XmlStreamTokenizer::process(std::istream &stream) {
           if (this->_buffer.empty()) {
             fail(TokenizationError::MALFORMED_INPUT);
           } else {
-            if (listener) {
-              listener->closeTag();
+            if (nullptr != this->_listener) {
+              this->_listener->closeTag();
             }
             this->_buffer.clear();
             this->_state = State::TEXT;
@@ -220,8 +219,8 @@ void XmlStreamTokenizer::process(std::istream &stream) {
           break;
         }
         if (character == '>' && !this->_buffer.empty()) {
-          if (listener) {
-            listener->closeTag();
+          if (nullptr != this->_listener) {
+            this->_listener->closeTag();
           }
           this->_buffer.clear();
           this->_state = State::TEXT;
@@ -300,8 +299,8 @@ void XmlStreamTokenizer::process(std::istream &stream) {
         break;
       case State::DECLARATION_ATTRIBUTE_VALUE:
         if (character == this->_quote) {
-          if (listener) {
-            listener->setAttribute(this->_attributeName, this->_buffer);
+          if (nullptr != this->_listener) {
+            this->_listener->setAttribute(this->_attributeName, this->_buffer);
           }
           this->_attributeName.clear();
           this->_buffer.clear();
@@ -315,8 +314,8 @@ void XmlStreamTokenizer::process(std::istream &stream) {
         break;
       case State::DECLARATION_QUESTION:
         if (character == '>') {
-          if (listener) {
-            listener->closeDeclaration();
+          if (nullptr != this->_listener) {
+            this->_listener->closeDeclaration();
           }
           this->_state = State::TEXT;
         } else {
@@ -325,8 +324,8 @@ void XmlStreamTokenizer::process(std::istream &stream) {
         break;
       case State::SELF_CLOSING:
         if (character == '>') {
-          if (listener) {
-            listener->closeTag();
+          if (nullptr != this->_listener) {
+            this->_listener->closeTag();
           }
           this->_state = State::TEXT;
         } else {
