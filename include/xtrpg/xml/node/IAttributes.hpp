@@ -62,12 +62,17 @@ public:
 
   /**
    * Executes a callback function for each key/value attribute pair.
+   * The callback can control iteration by returning a boolean value:
+   * - Return true to continue iterating to the next attribute
+   * - Return false to break early and stop iteration
    *
-   * Callback signature: void(std::string_view key, std::string_view value)
+   * Callback signature: bool(std::string_view key, std::string_view value)
    */
   template <typename Func> void forEachAttribute(Func &&callback) const {
     for (const auto &[key, value] : this->_attributes) {
-      callback(std::string_view{key}, std::string_view{value});
+      if (!callback(std::string_view{key}, std::string_view{value})) {
+        break;
+      }
     }
   }
 
