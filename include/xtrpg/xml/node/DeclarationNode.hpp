@@ -13,12 +13,12 @@ namespace xtrpg::xml::node {
 /**
  * Represents an XML declaration node with a tag name and attributes.
  */
-class XmlDeclarationTag : public INode, public ITagname, public IAttributes {
+class DeclarationNode : public INode, public ITagname, public IAttributes {
 public:
   /**
    * Constructs an XML declaration.
    */
-  explicit XmlDeclarationTag(std::string tagname)
+  explicit DeclarationNode(std::string tagname)
       : INode(NodeType::DECLARATION), ITagname(std::move(tagname)),
         IAttributes() {
     if (this->getTagname() != "xml") {

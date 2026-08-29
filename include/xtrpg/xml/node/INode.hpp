@@ -5,10 +5,15 @@
 
 namespace xtrpg::xml::node {
 
+// Forward declaration
+class NodeContainer;
+
 /**
  * Defines the common interface and node type metadata for XML nodes.
  */
 class INode {
+  friend class NodeContainer;
+
 public:
   /**
    * Constructor that takes in a node type.
@@ -30,10 +35,27 @@ public:
    */
   NodeType getNodeType() const { return this->_type; };
 
+  /**
+   * Checks if this node is of the specified type.
+   */
   bool isType(NodeType type) const { return this->_type == type; }
+
+  /**
+   * Returns the parent NodeContainer of this node, or nullptr if this is a
+   * root node.
+   */
+  class NodeContainer *getParent() const { return this->_parent; }
+
+protected:
+  /**
+   * Sets the parent NodeContainer for this node.
+   * Called by NodeContainer when appending children.
+   */
+  void setParent(class NodeContainer *parent) { this->_parent = parent; }
 
 private:
   NodeType _type;
+  class NodeContainer *_parent = nullptr;
 };
 
 /**
@@ -44,4 +66,4 @@ inline std::ostream &operator<<(std::ostream &os, const INode &node) {
   return os;
 }
 
-} // namespace xtrpg::xml
+} // namespace xtrpg::xml::node

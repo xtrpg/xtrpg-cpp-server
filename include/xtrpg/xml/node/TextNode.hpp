@@ -13,18 +13,18 @@ namespace xtrpg::xml::node {
 /**
  * Represents text content within an XML document and escapes it on output.
  */
-class XmlTextContent : public INode {
+class TextNode : public INode {
 public:
   /**
    * Default constructor that generate a blank text node.
    */
-  XmlTextContent() : INode(NodeType::TEXT_CONTENT) {}
+  TextNode() : INode(NodeType::TEXT_CONTENT) {}
 
   /**
    * Constructor that takes in a copy of the text content to store within this
    * node.
    */
-  explicit XmlTextContent(std::string content)
+  explicit TextNode(std::string content)
       : INode(NodeType::TEXT_CONTENT), _content(std::move(content)) {
     if (!isValidXmlCharacterData(this->_content)) {
       throw std::invalid_argument("Invalid character in XML text content");
@@ -86,8 +86,7 @@ private:
 /**
  * Stream insertion overload. (node << text).
  */
-inline XmlTextContent &operator<<(XmlTextContent &node,
-                                  const std::string &withText) {
+inline TextNode &operator<<(TextNode &node, const std::string &withText) {
   node.append(withText);
   return node;
 }
@@ -96,7 +95,7 @@ inline XmlTextContent &operator<<(XmlTextContent &node,
  * Stream extraction overload: reads one line and appends the characters read
  * to the content of the node without adding a delimiter.
  */
-inline std::istream &operator>>(std::istream &is, XmlTextContent &node) {
+inline std::istream &operator>>(std::istream &is, TextNode &node) {
   std::string temp;
   if (std::getline(is, temp)) {
     node.append(temp);
