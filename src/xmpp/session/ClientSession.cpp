@@ -2,6 +2,8 @@
 
 #include <iostream>
 
+#include "xtrpg/xml/tokenizer/XmlToken.hpp"
+
 namespace xtrpg::xmpp::session {
 
 ClientSession::~ClientSession() {
@@ -18,7 +20,7 @@ ClientSession::~ClientSession() {
   }
 
   // remove myself from the tokenizer
-  this->_tokenizer.setListener(nullptr);
+  this->_tokenizer.setObserver(nullptr);
 }
 
 void ClientSession::start() {
@@ -71,33 +73,27 @@ void ClientSession::process() {
   });
 }
 
-void ClientSession::openTag(std::string_view tagname) {
-  std::cout << "[Client Session] Receive tag: " << tagname << std::endl;
-
-  this->sendRaw(
-      "<stream:stream xmlns='jabber:client' "
-      "xmlns:stream='http://etherx.jabber.org/streams' id='err-1' "
-      "from='example.com' version='1.0'><stream:error><policy-violation "
-      "xmlns='urn:ietf:params:xml:ns:xmpp-streams'/><text "
-      "xmlns='urn:ietf:params:xml:ns:xmpp-streams' xml:lang='en'>Stanza size "
-      "limit of 64KB exceeded.</text></stream:error></stream:stream>");
-}
-void ClientSession::closeTag() {}
-void ClientSession::openDeclaration(std::string_view tagname) {
-  std::cout << "[ClientSession] Open Declaration: " << tagname << std::endl;
-  // ignore declaration tags
-}
-void ClientSession::closeDeclaration() {
-  std::cout << "[ClientSession] Close Declaration. " << std::endl;
-  // ignore declaration tags
-}
-void ClientSession::setAttribute(std::string_view name,
-                                 std::string_view value) {
-  std::cout << "[ClientSession] Set Attribute: " << name << "=" << value
+void ClientSession::onObservation(const xml::tokenizer::XmlToken &xmlToken) {
+  std::cout << "[ClientSession] Observed XML Token: " << xmlToken.content
             << std::endl;
+
+  for (const auto &[key, value] : xmlToken.attributes) {
+    std::cout << "                - " << key << ": " << value << std::endl;
+  }
+
+  if (xml::tokenizer::TokenType::OPEN_TAG == xmlToken.type &&
+      "stream:stream" == xmlToken.content) {
+    this->sendRaw(
+        "<stream:stream xmlns='jabber:client' "
+        "xmlns:stream='http://etherx.jabber.org/streams' id='err-1' "
+        "from='example.com' version='1.0'><stream:error><policy-violation "
+        "xmlns='urn:ietf:params:xml:ns:xmpp-streams'/><text "
+        "xmlns='urn:ietf:params:xml:ns:xmpp-streams' xml:lang='en'>Stanza size "
+        "limit of 64KB exceeded.</text></stream:error></stream:stream>");
+  }
 }
-void ClientSession::appendText(std::string_view content) {
-  std::cout << "[ClientSession] Append Text: `" << content << "`" << std::endl;
-}
+void ClientSession::onObservation(
+    const xml::tokenizer::TokenizationError &error) {}
+
 void ClientSession::onError(xml::tokenizer::TokenizationError error) {}
 } // namespace xtrpg::xmpp::session

@@ -8,6 +8,7 @@
 #include "xtrpg/xml/node/TagNode.hpp"
 #include "xtrpg/xml/tokenizer/TokenizationError.hpp"
 #include "xtrpg/xml/tokenizer/XmlStreamTokenizer.hpp"
+#include "xtrpg/xml/tokenizer/XmlToken.hpp"
 #include "xtrpg/xml/tokenizer/XmlTokenListener.hpp"
 
 namespace xtrpg::xmpp::session {
@@ -19,7 +20,7 @@ public:
   ClientSession(network::TcpConnection tcpConnection)
       : _tcpConnection(std::move(tcpConnection)) {
     std::cout << "[ClientSession] New Instance created." << std::endl;
-    this->_tokenizer.setListener(this);
+    this->_tokenizer.setObserver(this);
   }
   ~ClientSession();
 
@@ -33,12 +34,9 @@ public:
   void sendRaw(std::string_view data);
 
   // Tokenizer Calls
-  void openTag(std::string_view tagname);
-  void closeTag();
-  void openDeclaration(std::string_view tagname);
-  void closeDeclaration();
-  void setAttribute(std::string_view name, std::string_view value);
-  void appendText(std::string_view content);
+  void onObservation(const xml::tokenizer::XmlToken &xmlToken);
+  void onObservation(const xml::tokenizer::TokenizationError &error);
+
   void onError(xml::tokenizer::TokenizationError error);
 
 private:

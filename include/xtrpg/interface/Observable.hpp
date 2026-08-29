@@ -10,48 +10,26 @@
 namespace xtrpg::interface {
 template <typename TContext> class Observable {
 public:
-  virtual ~Observable() = default;
-
-  void addObserver(const std::shared_ptr<Observer<TContext>> &ptr) {
-    if (ptr) {
-      this->_observers.push_back(ptr);
+  virtual ~Observable() {
+    if (nullptr != this->_ptrObserver) {
+      std::cerr << "Observable not removed from an instance. This may lead to "
+                   "memory leaks."
+                << std::endl;
     }
-  }
+  };
 
-  void eraseObserver(const Observer<TContext> *pTarget) {
-    if (!pTarget) {
-      return;
-    }
-
-    std::erase_if(this->_observers,
-                  [pTarget](const std::weak_ptr<Observer<TContext>> &wp) {
-                    auto sp = wp.lock();
-                    return !sp || sp.get() == pTarget;
-                  });
-  }
-
-  void clearObservers() { this->_observers.clear(); }
+  void setObserver(Observer<TContext> *ptr) { this->_ptrObserver = ptr; }
 
 protected:
   void dispatchObservation(TContext &ctx) {
-    std::erase_if(this->_observers,
-                  [&ctx](const std::weak_ptr<Observer<TContext>> &wp) {
-                    // Attempt to gain temporary ownership of the current
-                    // observer.
-                    if (auto observer = wp.lock()) {
-                      // Dispatch the observation.
-                      observer->onObservation(ctx);
+    if (nullptr == this->_ptrObserver) {
+      return;
+    }
 
-                      // Pointer is still valid, keep it in the vector.
-                      return false;
-                    }
-
-                    // Pointer has expired, remove it from the observers vector.
-                    return true;
-                  });
+    this->_ptrObserver->onObservation(ctx);
   }
 
 private:
-  std::vector<std::weak_ptr<Observer<TContext>>> _observers;
+  Observer<TContext> *_ptrObserver;
 };
-} // namespace xtrpg
+} // namespace xtrpg::interface

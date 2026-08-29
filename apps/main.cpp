@@ -72,8 +72,7 @@ int main(int argc, char *argv[]) {
 
     // Create temporary connection handler to listen for incoming connections
     // and create ClientSession instances
-    auto connectionManager =
-        std::make_shared<xtrpg::xmpp::ClientConnectionManager>(ioContext);
+    xtrpg::xmpp::ClientConnectionManager connectionManager(ioContext);
 
     // Get the port from configuration (default 5222 for XMPP C2S)
     auto portValue = configManager.get<int64_t>("c2s", "port").value_or(5222);
@@ -85,7 +84,7 @@ int main(int argc, char *argv[]) {
     xtrpg::network::SocketConnectionListener listener(ioContext, listeningPort);
 
     // Register connection handler as observer for incoming connections
-    listener.addObserver(connectionManager);
+    listener.setObserver(&connectionManager);
 
     // Start accepting connections
     listener.start();
@@ -118,6 +117,7 @@ int main(int argc, char *argv[]) {
     // Graceful shutdown: stop listener and wait for pending operations
     std::cout << "[INFO] Stopping listener..." << std::endl;
     listener.stop();
+    listener.setObserver(nullptr);
 
     std::cout << "[INFO] Shutting down IO context..." << std::endl;
     ioContext.stop();
