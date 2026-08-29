@@ -84,13 +84,20 @@ void ClientSession::openTag(std::string_view tagname) {
 }
 void ClientSession::closeTag() {}
 void ClientSession::openDeclaration(std::string_view tagname) {
+  std::cout << "[ClientSession] Open Declaration: " << tagname << std::endl;
   // ignore declaration tags
 }
 void ClientSession::closeDeclaration() {
+  std::cout << "[ClientSession] Close Declaration. " << std::endl;
   // ignore declaration tags
 }
 void ClientSession::setAttribute(std::string_view name,
-                                 std::string_view value) {}
-void ClientSession::appendText(std::string_view content) {}
+                                 std::string_view value) {
+  std::cout << "[ClientSession] Set Attribute: " << name << "=" << value
+            << std::endl;
+}
+void ClientSession::appendText(std::string_view content) {
+  std::cout << "[ClientSession] Append Text: `" << content << "`" << std::endl;
+}
 void ClientSession::onError(xml::tokenizer::TokenizationError error) {}
 } // namespace xtrpg::xmpp::session
