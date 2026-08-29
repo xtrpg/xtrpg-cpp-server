@@ -73,7 +73,7 @@ void ClientSession::process() {
   });
 }
 
-void ClientSession::onObservation(const xml::tokenizer::XmlToken &xmlToken) {
+void ClientSession::onXmlToken(const xml::tokenizer::XmlToken &xmlToken) {
   std::cout << "[ClientSession] Observed XML Token: " << xmlToken.content
             << std::endl;
 
@@ -92,8 +92,7 @@ void ClientSession::onObservation(const xml::tokenizer::XmlToken &xmlToken) {
         "limit of 64KB exceeded.</text></stream:error></stream:stream>");
   }
 }
-void ClientSession::onObservation(
+void ClientSession::onTokenizationError(
     const xml::tokenizer::TokenizationError &error) {}
 
-void ClientSession::onError(xml::tokenizer::TokenizationError error) {}
 } // namespace xtrpg::xmpp::session

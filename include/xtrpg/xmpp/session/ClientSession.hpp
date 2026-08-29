@@ -34,10 +34,8 @@ public:
   void sendRaw(std::string_view data);
 
   // Tokenizer Calls
-  void onObservation(const xml::tokenizer::XmlToken &xmlToken);
-  void onObservation(const xml::tokenizer::TokenizationError &error);
-
-  void onError(xml::tokenizer::TokenizationError error);
+  void onXmlToken(const xml::tokenizer::XmlToken &xmlToken);
+  void onTokenizationError(const xml::tokenizer::TokenizationError &error);
 
 private:
   network::TcpConnection _tcpConnection;

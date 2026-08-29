@@ -6,7 +6,6 @@
 #include <string_view>
 #include <vector>
 
-#include "xtrpg/interface/Observable.hpp"
 #include "xtrpg/xml/tokenizer/TokenizationError.hpp"
 #include "xtrpg/xml/tokenizer/XmlToken.hpp"
 #include "xtrpg/xml/tokenizer/XmlTokenListener.hpp"
@@ -20,16 +19,27 @@ namespace xtrpg::xml::tokenizer {
  * A processor class that processing a stream of XML data and fires off
  * tokenization events to a registered listener.
  */
-class XmlStreamTokenizer : public interface::Observable<const XmlToken> {
+class XmlStreamTokenizer {
 public:
-  ~XmlStreamTokenizer() = default;
+  ~XmlStreamTokenizer() {
+    if (nullptr != this->_ptrObserver) {
+      std::cerr << "Observable not removed from an instance of "
+                   "XmlStreamTokenizer. This may lead to "
+                   "memory leaks."
+                << std::endl;
+    }
+  };
 
   /**
    * Consumes the data on the provided stream until it's exhausted.
    */
   void process(std::istream &stream);
 
+  void setObserver(XmlTokenListener *ptr) { this->_ptrObserver = ptr; }
+
 private:
+  XmlTokenListener *_ptrObserver = nullptr;
+
   enum class State {
     TEXT,
     AFTER_OPEN,

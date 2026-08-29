@@ -23,14 +23,15 @@ void XmlStreamTokenizer::process(std::istream &stream) {
     return;
   }
 
-  const auto fail = [&](const TokenizationError error) {
+  const auto fail = [&](const TokenizationError &error) {
     this->_error = error;
+    this->_ptrObserver->onTokenizationError(error);
   };
 
   const auto emitToken = [&](const XmlToken &token) {
     std::cout << "[XmlStreamTokenizer] Dispatching XML Token: " << token.content
               << std::endl;
-    dispatchObservation(token);
+    this->_ptrObserver->onXmlToken(token);
   };
 
   const auto emitText = [&](const std::string_view text) {
