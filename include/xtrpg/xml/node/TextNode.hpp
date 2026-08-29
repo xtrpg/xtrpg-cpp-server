@@ -32,6 +32,26 @@ public:
   }
 
   /**
+   * Explicitly defaulted copy constructor.
+   */
+  TextNode(const TextNode &) = default;
+
+  /**
+   * Explicitly defaulted move constructor.
+   */
+  TextNode(TextNode &&) = default;
+
+  /**
+   * Explicitly defaulted copy assignment operator.
+   */
+  TextNode &operator=(const TextNode &) = default;
+
+  /**
+   * Explicitly defaulted move assignment operator.
+   */
+  TextNode &operator=(TextNode &&) = default;
+
+  /**
    * Returns a reference to the text content stored on this node.
    */
   const std::string &content() const { return this->_content; }

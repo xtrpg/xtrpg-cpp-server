@@ -35,6 +35,26 @@ public:
       : INode(NodeType::TAG), ITagname(name), IAttributes(), NodeContainer() {}
 
   /**
+   * Explicitly defaulted copy constructor.
+   */
+  TagNode(const TagNode &) = default;
+
+  /**
+   * Explicitly defaulted move constructor.
+   */
+  TagNode(TagNode &&) = default;
+
+  /**
+   * Explicitly defaulted copy assignment operator.
+   */
+  TagNode &operator=(const TagNode &) = default;
+
+  /**
+   * Explicitly defaulted move assignment operator.
+   */
+  TagNode &operator=(TagNode &&) = default;
+
+  /**
    * Returns a reference to the name of the tag.
    */
   const std::string_view name() const { return this->getTagname(); }

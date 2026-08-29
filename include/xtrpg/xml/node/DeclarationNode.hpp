@@ -27,6 +27,26 @@ public:
   }
 
   /**
+   * Explicitly defaulted copy constructor.
+   */
+  DeclarationNode(const DeclarationNode &) = default;
+
+  /**
+   * Explicitly defaulted move constructor.
+   */
+  DeclarationNode(DeclarationNode &&) = default;
+
+  /**
+   * Explicitly defaulted copy assignment operator.
+   */
+  DeclarationNode &operator=(const DeclarationNode &) = default;
+
+  /**
+   * Explicitly defaulted move assignment operator.
+   */
+  DeclarationNode &operator=(DeclarationNode &&) = default;
+
+  /**
    * Sets an attribute key/value pair with XML declaration-specific validation.
    * Only allows 'version', 'encoding', and 'standalone' attributes.
    * Version must be '1.0' or '1.1', encoding must be a valid encoding name,

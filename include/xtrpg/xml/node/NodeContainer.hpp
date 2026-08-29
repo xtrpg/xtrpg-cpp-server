@@ -14,11 +14,11 @@ namespace xtrpg::xml::node {
  */
 class NodeContainer : public INode {
 public:
-  NodeContainer() : INode(NodeType::CONTAINER) {};
+  NodeContainer() : INode(NodeType::CONTAINER) {}
 
-  explicit NodeContainer(NodeType type) : INode(type) {};
+  explicit NodeContainer(NodeType type) : INode(type) {}
 
-  ~NodeContainer() {}
+  ~NodeContainer() = default;
 
   /**
    * Appends a given child node.

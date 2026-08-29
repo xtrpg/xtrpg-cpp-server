@@ -20,6 +20,11 @@ namespace xtrpg::xml::node {
 class IAttributes {
 public:
   /**
+   * Default constructor.
+   */
+  IAttributes() {}
+
+  /**
    * Virtual destructor.
    */
   virtual ~IAttributes() = default;
