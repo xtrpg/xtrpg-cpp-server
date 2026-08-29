@@ -39,7 +39,7 @@ public:
   /**
    * Sets the text content stored on this node, overriding any previous content.
    */
-  void content(std::string withContent) {
+  void setContent(std::string withContent) {
     if (!isValidXmlCharacterData(withContent)) {
       throw std::invalid_argument("Invalid character in XML text content");
     }
