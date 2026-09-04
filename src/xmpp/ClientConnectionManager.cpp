@@ -61,14 +61,13 @@ void ClientConnectionManager::onObservation(network::TcpConnection *ctx) {
     this->_clientSessionPtrs.push_back(clientSession);
   }
 
-  ctx->appendStateChangeCallback(
-      [this, clientSession](network::ConnectionState state) {
-        std::lock_guard lock(this->_callbackMutex);
-        if (!this->_isShuttingDown &&
-            state == network::ConnectionState::CLOSED) {
-          clientSession->stop();
-        }
-      });
+  ctx->appendStateChangeCallback([this, clientSession](
+                                     network::ConnectionState state) {
+    std::lock_guard lock(this->_callbackMutex);
+    if (!this->_isShuttingDown && state == network::ConnectionState::CLOSED) {
+      clientSession->stop();
+    }
+  });
 
   clientSession->setCompletionCallback([this](session::ClientSession *session) {
     std::lock_guard callbackLock(this->_callbackMutex);
