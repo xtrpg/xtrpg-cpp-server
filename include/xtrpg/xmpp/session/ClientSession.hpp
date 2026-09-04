@@ -16,16 +16,8 @@
 
 namespace xtrpg::xmpp::session {
 
-/**
- * Coordinates XML tokenization and transport I/O for one XMPP client.
- *
- * The session does not own the execution context used by the asynchronous
- * connection. The caller transfers ownership of @p tcpConnection to this
- * object, which deletes it during destruction. The owner must keep the
- * session alive until all connection callbacks have completed.
- */
+/** Coordinates XML tokenization and transport I/O for one XMPP client. */
 class ClientSession : public xml::tokenizer::XmlTokenListener {
-
 public:
   /**
    * Creates a session for an already accepted TCP connection.
@@ -33,20 +25,14 @@ public:
    * @param tcpConnection connection transferred to the new session; must not
    * be null
    */
-  ClientSession(network::TcpConnection *tcpConnection)
+  explicit ClientSession(network::TcpConnection *tcpConnection)
       : _ptrTcpConnection(tcpConnection) {
     this->_tokenizer.setObserver(this);
   }
 
-  /**
-   * Stops token processing and releases the owned connection and XML state.
-   *
-   * The session must not be destroyed while an asynchronous connection
-   * callback can still invoke it.
-   */
+  /** Stops token processing and releases the owned connection and XML state. */
   ~ClientSession();
 
-  // Session Control
   /** Starts reading and processing data from the client. */
   void start();
 
@@ -65,19 +51,10 @@ public:
   /** Schedules the next asynchronous read when the session is active. */
   void process();
 
-  /**
-   * Returns whether the owned connection has reached the closed state.
-   *
-   * @pre The connection passed to the constructor is still owned by the
-   * session.
-   */
+  /** Returns whether the owned connection has reached the closed state. */
   bool isClosed() const { return this->_ptrTcpConnection->isClosed(); }
 
-  /**
-   * Asynchronously writes raw XML or other protocol data to the client.
-   *
-   * @param data bytes to send; the data is copied by the connection layer
-   */
+  /** Asynchronously writes raw XML or other protocol data to the client. */
   void sendRaw(std::string_view data);
 
   /** Handles one token emitted by the XML stream tokenizer. */
@@ -99,25 +76,20 @@ private:
   /** Root XMPP stream node, when one is retained by the session. */
   xml::node::TagNode *_ptrRootStreamNode = nullptr;
 
-  /**
-   * Boolean flag that indicates whether the session is actively processing
-   * data to/from the underling connection.
-   */
+  /** Indicates whether the session is actively processing data. */
   std::atomic<bool> _isStopped{true};
 
-  /**
-   * Boolean flag that indicates whether the underlying connection has been
-   * terminated.
-   */
+  /** Indicates whether the underlying connection has terminated. */
   std::atomic<bool> _isShutdown{false};
 
-  /** Called once the session's pending read has completed after shutdown. */
+  /** Protects the completion callback while it is being registered/read. */
   mutable std::mutex _completionCallbackMutex;
   std::function<void(ClientSession *)> _completionCallback;
 
   /** Ensures completion is reported at most once. */
   std::atomic<bool> _completionNotified{false};
 
+  /** Notifies the manager that the session has completed. */
   void notifyCompletion();
 };
 } // namespace xtrpg::xmpp::session

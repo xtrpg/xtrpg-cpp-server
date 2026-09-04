@@ -14,6 +14,7 @@
 #include "xtrpg/xmpp/session/ClientSession.hpp"
 
 namespace xtrpg::xmpp {
+
 /**
  * Owns active XMPP client sessions and accepts new client connections.
  *
@@ -29,14 +30,7 @@ public:
   /** Creates an inactive manager without a connection listener. */
   ClientConnectionManager() = default;
 
-  /**
-   * Stops accepting connections and releases all owned client sessions.
-   *
-   * The owner must stop and join every thread calling run() on the supplied
-   * I/O context before destroying this manager. The destructor drains pending
-   * handlers itself and cannot synchronize with handlers running concurrently
-   * on an I/O-context thread it does not own.
-   */
+  /** Stops accepting connections and releases all owned client sessions. */
   ~ClientConnectionManager();
 
   /**
@@ -56,9 +50,7 @@ public:
    */
   void onObservation(network::TcpConnection *ctx) override;
 
-  /**
-   * Returns the schema for the client-to-server listener configuration.
-   */
+  /** Returns the client-to-server listener configuration schema. */
   config::ModuleConfig getConfigSchema() const {
     return {.name = "c2s",
             .description = "",
