@@ -2,9 +2,12 @@
 
 #include <asio.hpp>
 #include <asio/ssl.hpp>
+#include <atomic>
+#include <functional>
 #include <iostream>
 #include <memory>
 #include <optional>
+#include <vector>
 
 #include "xtrpg/network/exception/ConnectionClosed.hpp"
 
@@ -42,7 +45,7 @@ public:
   /**
    * Constructs a TcpConnection with the given TCP socket.
    */
-  explicit TcpConnection(asio::ip::tcp::socket tcpSocket)
+  explicit TcpConnection(asio::ip::tcp::socket &tcpSocket)
       : _tcpSocket(std::move(tcpSocket)) {
     this->_strand.emplace(asio::make_strand(this->_tcpSocket.get_executor()));
   }
@@ -57,7 +60,11 @@ public:
    * Async read from the underlying tcp connection, calling the provided lambda
    * function with a new istream of the incoming stream data.
    */
-  void read(std::function<void(std::istream &)> callback);
+  void
+  read(std::function<void(const std::error_code &, std::istream &)> callback);
+
+  /** Cancels the currently pending read operation, if any. */
+  void cancelRead();
 
   /**
    * Writes data to the connection. If the connection is closed, it will throw
@@ -66,10 +73,18 @@ public:
   void write(std::string_view data);
 
   /**
+   * Returns whether the current state of the TCP Connection matches the
+   * provided argument.
+   */
+  bool is(ConnectionState connectionState) const {
+    return connectionState == this->_state;
+  }
+
+  /**
    * Closes the connection. If the connection is already closed, it will do
    * nothing.
    */
-  void close();
+  void close(std::function<void()> callback = {});
 
   /**
    * Checks if the connection is secure (SSL/TLS).
@@ -112,11 +127,29 @@ public:
     return *this;
   }
 
+  void
+  appendStateChangeCallback(std::function<void(ConnectionState)> callback) {
+    std::cout << "[TcpConnection] Append State Change Callback." << std::endl;
+    this->_stateChangeCallbacks.push_back(callback);
+  }
+
 private:
+  std::vector<std::function<void(ConnectionState)>> _stateChangeCallbacks;
+  std::vector<std::function<void()>> _closeCallbacks;
+
+  void dispatchStateChange(ConnectionState newState) {
+    this->_state = newState;
+    for (auto &callback : this->_stateChangeCallbacks) {
+      callback(newState);
+    }
+  }
+
+  void dispatchCloseCallbacks();
+
   /**
    * The current state of the connection.
    */
-  ConnectionState _state{ConnectionState::INSECURE};
+  std::atomic<ConnectionState> _state{ConnectionState::INSECURE};
 
   /**
    * The underlying TCP socket used for the connection.

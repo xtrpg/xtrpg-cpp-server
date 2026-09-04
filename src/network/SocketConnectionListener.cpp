@@ -12,7 +12,7 @@ bool isListenerShutdownError(const std::error_code &ec) {
 void SocketConnectionListener::initializeAcceptors() {
   try {
     asio::ip::tcp::acceptor ipv6Acceptor(
-        this->_ioContext,
+        *this->_ptrIoContext,
         asio::ip::tcp::endpoint(asio::ip::tcp::v6(), this->_port));
 
     asio::ip::v6_only option(false);
@@ -32,7 +32,7 @@ void SocketConnectionListener::initializeAcceptors() {
 
   try {
     this->_ipv4Acceptor.emplace(
-        this->_ioContext,
+        *this->_ptrIoContext,
         asio::ip::tcp::endpoint(asio::ip::tcp::v4(), this->_port));
   } catch (const std::exception &ex) {
     std::cerr
@@ -99,8 +99,10 @@ void SocketConnectionListener::acceptIPv4Connections() {
       std::cout << "[SocketConnectionListener] New incoming IPv4 connection."
                 << std::endl;
 
-      auto tcpConnection = std::make_shared<TcpConnection>(std::move(socket));
-      this->dispatchObservation(tcpConnection);
+      TcpConnection *ptrTcpConnection = new TcpConnection(socket);
+      if (!this->dispatchObservation(ptrTcpConnection)) {
+        delete ptrTcpConnection;
+      }
     } else if (!isListenerShutdownError(ec)) {
       std::cerr << "[SocketConnectionListener] IPv4 accept failed: "
                 << ec.message() << std::endl;
@@ -123,8 +125,10 @@ void SocketConnectionListener::acceptIPv6Connections() {
       std::cout << "[SocketConnectionListener] New incoming IPv6 connection."
                 << std::endl;
 
-      auto tcpConnection = std::make_shared<TcpConnection>(std::move(socket));
-      this->dispatchObservation(tcpConnection);
+      TcpConnection *ptrTcpConnection = new TcpConnection(socket);
+      if (!this->dispatchObservation(ptrTcpConnection)) {
+        delete ptrTcpConnection;
+      }
     } else if (!isListenerShutdownError(ec)) {
       std::cerr << "[SocketConnectionListener] IPv6 accept failed: "
                 << ec.message() << std::endl;

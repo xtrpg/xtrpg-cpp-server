@@ -70,32 +70,19 @@ int main(int argc, char *argv[]) {
     // Initialize Asio IO context for async I/O operations
     asio::io_context ioContext;
 
-    // Create temporary connection handler to listen for incoming connections
-    // and create ClientSession instances
-    xtrpg::xmpp::ClientConnectionManager connectionManager(ioContext);
-
     // Get the port from configuration (default 5222 for XMPP C2S)
     auto portValue = configManager.get<int64_t>("c2s", "port").value_or(5222);
     uint16_t listeningPort = static_cast<uint16_t>(portValue);
 
-    // Initialize socket connection listener
-    std::cout << "[INFO] Starting XMPP Client-to-Server (C2S) listener on port "
-              << listeningPort << std::endl;
-    xtrpg::network::SocketConnectionListener listener(ioContext, listeningPort);
-
-    // Register connection handler as observer for incoming connections
-    listener.setObserver(&connectionManager);
-
-    // Start accepting connections
-    listener.start();
+    // Create temporary connection handler to listen for incoming connections
+    // and create ClientSession instances
+    xtrpg::xmpp::ClientConnectionManager connectionManager(ioContext,
+                                                           listeningPort);
 
     // Set up signal handlers for graceful shutdown (SIGINT and SIGTERM)
-#ifdef _WIN32
     signal(SIGINT, signalHandler);
     signal(SIGTERM, signalHandler);
-#else
-    signal(SIGINT, signalHandler);
-    signal(SIGTERM, signalHandler);
+#ifndef _WIN32
     signal(SIGHUP, signalHandler);
 #endif
 
@@ -110,14 +97,15 @@ int main(int argc, char *argv[]) {
     }
 
     // Main thread: wait for shutdown signal
+    int previousCount = -1;
     while (!g_shouldShutdown) {
       std::this_thread::sleep_for(std::chrono::milliseconds(100));
+      if (previousCount != connectionManager.countConnections()) {
+        std::cout << "[main] Connection Count: "
+                  << connectionManager.countConnections() << std::endl;
+        previousCount = connectionManager.countConnections();
+      }
     }
-
-    // Graceful shutdown: stop listener and wait for pending operations
-    std::cout << "[INFO] Stopping listener..." << std::endl;
-    listener.stop();
-    listener.setObserver(nullptr);
 
     std::cout << "[INFO] Shutting down IO context..." << std::endl;
     ioContext.stop();

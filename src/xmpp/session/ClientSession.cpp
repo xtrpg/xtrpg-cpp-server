@@ -1,86 +1,73 @@
 #include "xtrpg/xmpp/session/ClientSession.hpp"
 
-#include <iostream>
-
-#include "xtrpg/xml/tokenizer/XmlToken.hpp"
-
 namespace xtrpg::xmpp::session {
 
 ClientSession::~ClientSession() {
-  // destroy the root stream node
-  if (this->_ptrRootStreamNode != nullptr) {
-    delete this->_ptrRootStreamNode;
-    this->_ptrRootStreamNode = nullptr;
-  }
-
-  // destroy the xml declaration node
-  if (this->_ptrDeclarationNode != nullptr) {
-    delete this->_ptrDeclarationNode;
-    this->_ptrDeclarationNode = nullptr;
-  }
-
-  // remove myself from the tokenizer
+  delete this->_ptrRootStreamNode;
+  delete this->_ptrDeclarationNode;
   this->_tokenizer.setObserver(nullptr);
+  delete this->_ptrTcpConnection;
+  this->_ptrTcpConnection = nullptr;
 }
 
 void ClientSession::start() {
-  std::cout << "[ClientSession] Requesting to start." << std::endl;
   if (this->_isShutdown) {
-    std::cout << "[ClientSession] Failed to start, already shutdown."
-              << std::endl;
     return;
   }
-
-  this->_isStopped.exchange(false);
+  this->_isStopped = false;
   this->process();
 }
 
-void ClientSession::stop() { this->_isStopped.exchange(true); }
+void ClientSession::stop() {
+  if (!this->_isStopped.exchange(true)) {
+    this->_ptrTcpConnection->cancelRead();
+  }
+}
 
 void ClientSession::shutdown() {
   this->stop();
   if (this->_isShutdown.exchange(true)) {
     return;
   }
-
-  // shutdown the TCP connection
-  this->_tcpConnection.close();
+  this->_ptrTcpConnection->close([this]() { this->notifyCompletion(); });
 }
 
 void ClientSession::sendRaw(std::string_view data) {
-  if (this->_isShutdown) {
-    return;
+  if (!this->_isShutdown) {
+    *this->_ptrTcpConnection << data;
   }
-
-  this->_tcpConnection << data;
 }
 
 void ClientSession::process() {
-
-  std::cout << "[ClientSession] Requesting to process." << std::endl;
-  if (this->_isStopped) {
-    std::cout << "[ClientSession] Session is stopped." << std::endl;
+  if (this->_isStopped || this->_isShutdown) {
     return;
   }
+  this->_ptrTcpConnection->read(
+      [this](const std::error_code &error, std::istream &stream) {
+        if (error || this->_isStopped || this->_isShutdown) {
+          this->notifyCompletion();
+          return;
+        }
+        this->_tokenizer.process(stream);
+        this->process();
+      });
+}
 
-  // calls the _tcpConnect to request the next chunk of data
-  // the lambda function
-  this->_tcpConnection.read([this](std::istream &is) {
-    std::cout << "[Client Session] Passing input stream to the tokenizer."
-              << std::endl;
-    this->_tokenizer.process(is);
-    this->process();
-  });
+void ClientSession::notifyCompletion() {
+  if (this->_completionNotified.exchange(true)) {
+    return;
+  }
+  std::function<void(ClientSession *)> completionCallback;
+  {
+    std::lock_guard lock(this->_completionCallbackMutex);
+    completionCallback = this->_completionCallback;
+  }
+  if (completionCallback) {
+    completionCallback(this);
+  }
 }
 
 void ClientSession::onXmlToken(const xml::tokenizer::XmlToken &xmlToken) {
-  std::cout << "[ClientSession] Observed XML Token: " << xmlToken.content
-            << std::endl;
-
-  for (const auto &[key, value] : xmlToken.attributes) {
-    std::cout << "                - " << key << ": " << value << std::endl;
-  }
-
   if (xml::tokenizer::TokenType::OPEN_TAG == xmlToken.type &&
       "stream:stream" == xmlToken.content) {
     this->sendRaw(
@@ -90,8 +77,10 @@ void ClientSession::onXmlToken(const xml::tokenizer::XmlToken &xmlToken) {
         "xmlns='urn:ietf:params:xml:ns:xmpp-streams'/><text "
         "xmlns='urn:ietf:params:xml:ns:xmpp-streams' xml:lang='en'>Stanza size "
         "limit of 64KB exceeded.</text></stream:error></stream:stream>");
+    this->shutdown();
   }
 }
+
 void ClientSession::onTokenizationError(
     const xml::tokenizer::TokenizationError &error) {}
 
