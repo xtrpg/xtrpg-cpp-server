@@ -8,6 +8,6 @@ public:
   virtual ~Observer() = default;
 
   // Generic handler callback
-  virtual void onObservation(TContext &ctx) = 0;
+  virtual void onObservation(TContext ctx) = 0;
 };
 } // namespace xtrpg::interface
