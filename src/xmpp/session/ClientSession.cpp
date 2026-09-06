@@ -1,6 +1,14 @@
 #include "xtrpg/xmpp/session/ClientSession.hpp"
 
+#include "xtrpg/xmpp/stream/UnimplementedStreamHandler.hpp"
+
 namespace xtrpg::xmpp::session {
+
+ClientSession::ClientSession(network::TcpConnection *tcpConnection)
+    : _ptrTcpConnection(tcpConnection),
+      _ptrActiveStreamHandler(&stream::UnimplementedStreamHandler::instance()) {
+  this->_tokenizer.setObserver(this);
+}
 
 ClientSession::~ClientSession() {
   delete this->_ptrRootStreamNode;
@@ -83,5 +91,16 @@ void ClientSession::onXmlToken(const xml::tokenizer::XmlToken &xmlToken) {
 
 void ClientSession::onTokenizationError(
     const xml::tokenizer::TokenizationError &error) {}
+
+void ClientSession::setActiveStreamHandler(
+    const stream::StreamHandler *streamHandler) {
+  std::lock_guard lock(this->_activeStreamHandlerMutex);
+  this->_ptrActiveStreamHandler = streamHandler;
+}
+
+const stream::StreamHandler *ClientSession::getActiveStreamHandler() const {
+  std::lock_guard lock(this->_activeStreamHandlerMutex);
+  return this->_ptrActiveStreamHandler;
+}
 
 } // namespace xtrpg::xmpp::session

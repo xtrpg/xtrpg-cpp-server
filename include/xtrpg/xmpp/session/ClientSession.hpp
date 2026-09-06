@@ -14,6 +14,10 @@
 #include "xtrpg/xml/tokenizer/XmlToken.hpp"
 #include "xtrpg/xml/tokenizer/XmlTokenListener.hpp"
 
+namespace xtrpg::xmpp::stream {
+class StreamHandler;
+}
+
 namespace xtrpg::xmpp::session {
 
 /** Coordinates XML tokenization and transport I/O for one XMPP client. */
@@ -25,10 +29,7 @@ public:
    * @param tcpConnection connection transferred to the new session; must not
    * be null
    */
-  explicit ClientSession(network::TcpConnection *tcpConnection)
-      : _ptrTcpConnection(tcpConnection) {
-    this->_tokenizer.setObserver(this);
-  }
+  explicit ClientSession(network::TcpConnection *tcpConnection);
 
   /** Stops token processing and releases the owned connection and XML state. */
   ~ClientSession();
@@ -63,6 +64,12 @@ public:
   /** Handles a tokenizer error reported for this client stream. */
   void onTokenizationError(const xml::tokenizer::TokenizationError &error);
 
+  /** Replaces the non-owning active stream handler; nullptr clears it. */
+  void setActiveStreamHandler(const stream::StreamHandler *streamHandler);
+
+  /** Returns a snapshot of the non-owning active stream handler. */
+  const stream::StreamHandler *getActiveStreamHandler() const;
+
 private:
   /** TCP connection owned by this session. */
   network::TcpConnection *_ptrTcpConnection;
@@ -88,6 +95,10 @@ private:
 
   /** Ensures completion is reported at most once. */
   std::atomic<bool> _completionNotified{false};
+
+  /** Protects the active stream handler while it is being accessed. */
+  mutable std::mutex _activeStreamHandlerMutex;
+  const stream::StreamHandler *_ptrActiveStreamHandler = nullptr;
 
   /** Notifies the manager that the session has completed. */
   void notifyCompletion();
