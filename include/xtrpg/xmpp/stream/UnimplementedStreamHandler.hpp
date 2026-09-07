@@ -17,9 +17,8 @@ public:
     session.sendRaw(
         "<stream:stream xmlns='jabber:client' "
         "xmlns:stream='http://etherx.jabber.org/streams' id='err-1' "
-        "from='example.com' version='1.0'>");
-    session.sendRaw(
-        "<stream:error><undefined-condition "
+        "from='example.com' "
+        "version='1.0'><stream:error><internal-server-error "
         "xmlns='urn:ietf:params:xml:ns:xmpp-streams'/><text "
         "xmlns='urn:ietf:params:xml:ns:xmpp-streams' xml:lang='en'>An "
         "unexpected error occurred.</text></stream:error>");
