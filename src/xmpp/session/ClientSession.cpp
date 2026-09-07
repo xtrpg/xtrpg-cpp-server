@@ -1,5 +1,7 @@
 #include "xtrpg/xmpp/session/ClientSession.hpp"
 
+#include "xtrpg/utils/String.hpp"
+#include "xtrpg/xmpp/stream/NegotiationStreamHandler.hpp"
 #include "xtrpg/xmpp/stream/UnimplementedStreamHandler.hpp"
 
 namespace xtrpg::xmpp::session {
@@ -82,8 +84,12 @@ void ClientSession::notifyCompletion() {
 
 void ClientSession::onXmlToken(const xml::tokenizer::XmlToken &xmlToken) {
 
+  std::cout << "Incoming XML Token" << std::endl;
+  std::cout << "          Content: " << xmlToken.content << std::endl;
+
   // Ignore any comment tokens
   if (xml::tokenizer::TokenType::COMMENT == xmlToken.type) {
+    std::cout << "Ignoring Comment: " << xmlToken.content << std::endl;
     return;
   }
 
@@ -91,35 +97,59 @@ void ClientSession::onXmlToken(const xml::tokenizer::XmlToken &xmlToken) {
   if (nullptr == this->_ptrActiveStreamHandler) {
     // ignore declaration tokens
     if (xml::tokenizer::TokenType::DECLARATION == xmlToken.type) {
+      std::cout << "Ignoring Declaration: " << xmlToken.content << std::endl;
+      return;
+    }
+
+    // if the incoming token is text content and blank (only contains whitespace
+    // and newlines) or empty then ignore and return immediately.
+    if (xml::tokenizer::TokenType::TEXT_CONTENT == xmlToken.type &&
+        xtrpg::utils::string::isBlank(xmlToken.content)) {
+      std::cout << "Ignoring Whitespace Text Content." << std::endl;
       return;
     }
 
     // if it's not an opening tag, then it's not the start of a stream
-    if (xml::tokenizer::TokenType::OPEN_TAG != xmlToken.type) {
+    if (xml::tokenizer::TokenType::OPEN_TAG != xmlToken.type ||
+        "stream:stream" != xmlToken.content) {
       // return a malformed xml stream error
-      return;
-    }
-
-    // the expected tag should be a `stream:stream` tag
-    if ("stream:stream" != xmlToken.content) {
-      // return an invalid opening tag error
+      this->sendRaw(
+          "<stream:stream "
+          "xmlns:stream='http://etherx.jabber.org/"
+          "streams'><stream:error><bad-format "
+          "xmlns='urn:ietf:params:xml:ns:xmpp-streams'/><text "
+          "xmlns='urn:ietf:params:xml:ns:xmpp-streams'>First element must be "
+          "an opening stream header.</text></stream:error></stream:stream>");
+      this->shutdown();
       return;
     }
 
     // determine which stream handler to activate
     if (!this->_ptrTcpConnection->isSecure()) {
       // start the negotiation phase
-      return;
+      // {
+      //   std::lock_guard lock(this->_activeStreamHandlerMutex);
+      //   this->_ptrActiveStreamHandler =
+      //       &stream::NegotiationStreamHandler::instance();
+      // }
+      // this->_ptrActiveStreamHandler->onStart(*this);
+      // return;
     }
 
     // if not authenticated
     // start the authentication phase
 
     // start the binded phase
+    {
+      std::lock_guard lock(this->_activeStreamHandlerMutex);
+      this->_ptrActiveStreamHandler =
+          &stream::UnimplementedStreamHandler::instance();
+    }
+    this->_ptrActiveStreamHandler->onStart(*this);
     return;
   }
 
-  // Are we parseing the root stream:stream node?
+  // Are we parsing the root stream:stream node?
   if (nullptr == this->_ptrCurrentXmlNode) {
 
     // Are we ending the current stream
