@@ -70,6 +70,13 @@ public:
   /** Returns a snapshot of the non-owning active stream handler. */
   const stream::StreamHandler *getActiveStreamHandler() const;
 
+  /**
+   * Returns whether the active stream handler has been defined or not.
+   */
+  bool hasActiveStreamHandler() const {
+    return nullptr != this->_ptrActiveStreamHandler;
+  }
+
 private:
   /** TCP connection owned by this session. */
   network::TcpConnection *_ptrTcpConnection;
