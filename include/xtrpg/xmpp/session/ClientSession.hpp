@@ -107,6 +107,10 @@ private:
   mutable std::mutex _activeStreamHandlerMutex;
   const stream::StreamHandler *_ptrActiveStreamHandler = nullptr;
 
+  /** Protects the active xml node while it is being accessed. */
+  mutable std::mutex _currentXmlNodeMutex;
+  const xml::node::TagNode *_ptrCurrentXmlNode = nullptr;
+
   /** Notifies the manager that the session has completed. */
   void notifyCompletion();
 };

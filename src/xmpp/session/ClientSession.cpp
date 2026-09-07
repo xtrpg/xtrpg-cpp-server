@@ -15,6 +15,12 @@ ClientSession::~ClientSession() {
   this->_tokenizer.setObserver(nullptr);
   delete this->_ptrTcpConnection;
   this->_ptrTcpConnection = nullptr;
+
+  if (nullptr != this->_ptrCurrentXmlNode) {
+    std::lock_guard lock(this->_currentXmlNodeMutex);
+    delete this->_ptrCurrentXmlNode;
+    this->_ptrCurrentXmlNode = nullptr;
+  }
 }
 
 void ClientSession::start() {
@@ -114,29 +120,29 @@ void ClientSession::onXmlToken(const xml::tokenizer::XmlToken &xmlToken) {
   }
 
   // Are we parseing the root stream:stream node?
-  // if (nullptr == this->_ptrCurrentNode) {
+  if (nullptr == this->_ptrCurrentXmlNode) {
 
-  // Are we ending the current stream
-  if (xml::tokenizer::TokenType::CLOSE_TAG == xmlToken.type &&
-      "stream:stream" == xmlToken.content) {
-    // close the stream
-    // remove the handler.
-    return;
+    // Are we ending the current stream
+    if (xml::tokenizer::TokenType::CLOSE_TAG == xmlToken.type &&
+        "stream:stream" == xmlToken.content) {
+      this->sendRaw("</stream:stream>");
+      this->setActiveStreamHandler(nullptr);
+      return;
+    }
+
+    // if (xml::tokenizer::TokenType::EMPTY_TAG != xmlToken.type) {
+    // process the node and dispatch to handler.
+    // return;
+    // }
+
+    // if (xml::tokenizer::TokenType::OPEN_TAG != xmlToken.type) { malformed
+    // stream error close the stream.
+    // return;
+    // }
+
+    // create the new xml node.
+    // return;
   }
-
-  // if (xml::tokenizer::TokenType::EMPTY_TAG != xmlToken.type) {
-  // process the node and dispatch to handler.
-  // return;
-  // }
-
-  // if (xml::tokenizer::TokenType::OPEN_TAG != xmlToken.type) { malformed
-  // stream error close the stream.
-  // return;
-  // }
-
-  // create the new xml node.
-  // return;
-  // }
 
   // From here on down we are parsing a node
 
