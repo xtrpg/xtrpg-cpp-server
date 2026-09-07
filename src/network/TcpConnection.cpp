@@ -15,9 +15,6 @@ void TcpConnection::dispatchCloseCallbacks() {
 
 void TcpConnection::upgrade(asio::ssl::context &ssl_ctx) {
   if (!this->isOpen()) {
-    std::cout
-        << "[TcpConnection] Unable to upgrade as TCP Connection is not open."
-        << std::endl;
     return;
   }
 
@@ -43,17 +40,14 @@ void TcpConnection::upgrade(asio::ssl::context &ssl_ctx) {
 void TcpConnection::read(
     std::function<void(const std::error_code &, std::istream &)> callback) {
   if (!this->isOpen()) {
-    std::cout << "[TcpConnection] Unable to read as TCP Connection is not open."
-              << std::endl;
     // Preserve read's callback contract even when the socket closed before
     // the asynchronous operation could be posted.
     std::istringstream stream;
     callback(asio::error::operation_aborted, stream);
     return;
   }
-  std::cout << "[TcpConnection] Requesting to read." << std::endl;
-  auto buffer = std::make_shared<std::vector<char>>(4096);
 
+  auto buffer = std::make_shared<std::vector<char>>(4096);
   asio::post(*this->_strand, [this, buffer, callback]() {
     if (!this->isOpen()) {
       // The connection may close after the caller's initial state check but
@@ -117,9 +111,6 @@ void TcpConnection::cancelRead() {
 
 void TcpConnection::write(std::string_view data) {
   if (!this->isOpen()) {
-    std::cout
-        << "[TcpConnection] Unable to write as TCP Connection is not open."
-        << std::endl;
     return;
   }
   auto payload = std::make_shared<std::string>(data);
@@ -149,11 +140,7 @@ void TcpConnection::write(std::string_view data) {
 }
 
 void TcpConnection::close(std::function<void()> callback) {
-
   if (this->is(ConnectionState::CLOSED) || this->is(ConnectionState::CLOSING)) {
-    std::cout << "[TcpConnection] Connection is already closed or in the "
-                 "process of being closed."
-              << std::endl;
     if (this->isClosed() && callback) {
       callback();
     } else if (this->isClosing() && callback) {
@@ -167,7 +154,6 @@ void TcpConnection::close(std::function<void()> callback) {
   }
 
   // Set the state to closing.
-  std::cout << "[TcpConnection] Request Close." << std::endl;
   this->dispatchStateChange(ConnectionState::CLOSING);
 
   // Serialize transport shutdown with reads and writes on the strand.

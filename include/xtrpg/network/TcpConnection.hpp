@@ -129,7 +129,6 @@ public:
 
   void
   appendStateChangeCallback(std::function<void(ConnectionState)> callback) {
-    std::cout << "[TcpConnection] Append State Change Callback." << std::endl;
     this->_stateChangeCallbacks.push_back(callback);
   }
 
