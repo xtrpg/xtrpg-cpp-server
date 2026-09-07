@@ -5,8 +5,7 @@
 namespace xtrpg::xmpp::session {
 
 ClientSession::ClientSession(network::TcpConnection *tcpConnection)
-    : _ptrTcpConnection(tcpConnection),
-      _ptrActiveStreamHandler(&stream::UnimplementedStreamHandler::instance()) {
+    : _ptrTcpConnection(tcpConnection) {
   this->_tokenizer.setObserver(this);
 }
 
@@ -76,6 +75,104 @@ void ClientSession::notifyCompletion() {
 }
 
 void ClientSession::onXmlToken(const xml::tokenizer::XmlToken &xmlToken) {
+
+  // Ignore any comment tokens
+  if (xml::tokenizer::TokenType::COMMENT == xmlToken.type) {
+    return;
+  }
+
+  // Are we waiting for the client to start a new stream?
+  if (nullptr == this->_ptrActiveStreamHandler) {
+    // ignore declaration tokens
+    if (xml::tokenizer::TokenType::DECLARATION == xmlToken.type) {
+      return;
+    }
+
+    // if it's not an opening tag, then it's not the start of a stream
+    if (xml::tokenizer::TokenType::OPEN_TAG != xmlToken.type) {
+      // return a malformed xml stream error
+      return;
+    }
+
+    // the expected tag should be a `stream:stream` tag
+    if ("stream:stream" != xmlToken.content) {
+      // return an invalid opening tag error
+      return;
+    }
+
+    // determine which stream handler to activate
+    if (!this->_ptrTcpConnection->isSecure()) {
+      // start the negotiation phase
+      return;
+    }
+
+    // if not authenticated
+    // start the authentication phase
+
+    // start the binded phase
+    return;
+  }
+
+  // Are we parseing the root stream:stream node?
+  // if (nullptr == this->_ptrCurrentNode) {
+
+  // Are we ending the current stream
+  if (xml::tokenizer::TokenType::CLOSE_TAG == xmlToken.type &&
+      "stream:stream" == xmlToken.content) {
+    // close the stream
+    // remove the handler.
+    return;
+  }
+
+  // if (xml::tokenizer::TokenType::EMPTY_TAG != xmlToken.type) {
+  // process the node and dispatch to handler.
+  // return;
+  // }
+
+  // if (xml::tokenizer::TokenType::OPEN_TAG != xmlToken.type) { malformed
+  // stream error close the stream.
+  // return;
+  // }
+
+  // create the new xml node.
+  // return;
+  // }
+
+  // From here on down we are parsing a node
+
+  if (xml::tokenizer::TokenType::CLOSE_TAG == xmlToken.type) {
+    // if the current node != this close tag:
+    // - then return a malformed error and close stream.
+    // - return
+
+    // if the current node does not have a parent node (ie parent == nullptr)
+    // - then dispatch the current node to the handler
+    // - set current node to nullptr
+    // - return
+
+    // set the parent of the current node to be the new current node.
+    // return
+  }
+
+  if (xml::tokenizer::TokenType::EMPTY_TAG == xmlToken.type) {
+    // append an empty node to the current node.
+    // return
+  }
+
+  if (xml::tokenizer::TokenType::TEXT_CONTENT == xmlToken.type) {
+    // append text content to the current node
+    // return
+  }
+
+  if (xml::tokenizer::TokenType::OPEN_TAG == xmlToken.type) {
+    // create a new node
+    // append the new node to the current node
+    // set the current node to be the new node
+    // return
+  }
+
+  // return a malformed XML stream.
+
   if (xml::tokenizer::TokenType::OPEN_TAG == xmlToken.type &&
       "stream:stream" == xmlToken.content) {
     this->sendRaw(
