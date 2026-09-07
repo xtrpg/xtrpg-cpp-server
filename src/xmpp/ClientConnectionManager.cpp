@@ -84,6 +84,9 @@ void ClientConnectionManager::onObservation(network::TcpConnection *ctx) {
     this->_clientSessionPtrs.erase(sessionIt);
     lock.unlock();
     asio::post(*this->_ioContext, [session]() { delete session; });
+
+    std::cout << "[ClientConnectionManager] Connection Count: "
+              << this->countConnections() << std::endl;
   });
 
   clientSession->start();
