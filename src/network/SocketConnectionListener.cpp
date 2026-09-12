@@ -11,18 +11,20 @@ bool isListenerShutdownError(const std::error_code &ec) {
 
 void SocketConnectionListener::initializeAcceptors() {
   try {
-    asio::ip::tcp::acceptor ipv6Acceptor(
-        *this->_ptrIoContext,
-        asio::ip::tcp::endpoint(asio::ip::tcp::v6(), this->_port));
+    // Create acceptor without binding to endpoint
+    asio::ip::tcp::acceptor ipv6Acceptor(*this->_ptrIoContext,
+                                         asio::ip::tcp::v6());
 
+    // Set socket option BEFORE binding (required on Windows)
     asio::ip::v6_only option(false);
     ipv6Acceptor.set_option(option);
-    this->_ipv6Acceptor.emplace(std::move(ipv6Acceptor));
 
-    std::cout
-        << "[SocketConnectionListener] Enabled IPv6 dual-stack listener on "
-        << this->_port << std::endl;
-    return;
+    // Now bind to the endpoint
+    ipv6Acceptor.bind(
+        asio::ip::tcp::endpoint(asio::ip::tcp::v6(), this->_port));
+    ipv6Acceptor.listen();
+
+    this->_ipv6Acceptor.emplace(std::move(ipv6Acceptor));
   } catch (const std::exception &ex) {
     std::cerr << "[SocketConnectionListener] Failed to open IPv6 dual-stack "
                  "socket on "
