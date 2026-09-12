@@ -19,11 +19,16 @@ public:
                     "xmlns:stream='http://etherx.jabber.org/streams' "
                     "id='err-1' from='example.com' version='1.0'>");
 
-    session.sendRaw(
-        "<stream:error><internal-server-error "
-        "xmlns='urn:ietf:params:xml:ns:xmpp-streams'/><text "
-        "xmlns='urn:ietf:params:xml:ns:xmpp-streams' xml:lang='en'>An "
-        "unexpected error occurred.</text></stream:error>");
+    session.send("stream:error", [](xml::node::TagNode &streamError) {
+      streamError.append("internal-server-error", [](xml::node::TagNode &node) {
+        node.setAttribute("xmlns", "urn:ietf:params:xml:ns:xmpp-streams");
+      });
+      streamError.append("text", [](xml::node::TagNode &node) {
+        node.setAttribute("xmlns", "urn:ietf:params:xml:ns:xmpp-streams");
+        node.setAttribute("xml:lang", "en");
+        node.append("An unexpected error occurred.");
+      });
+    });
 
     session.shutdown();
   }
