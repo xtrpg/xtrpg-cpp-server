@@ -31,9 +31,10 @@ public:
       : ITagname(name), IAttributes(), NodeContainer(NodeType::TAG) {}
 
   /**
-   * Explicitly defaulted copy constructor.
+   * Deleted copy constructor - prevents accidental shallow copies of child
+   * nodes. Use move semantics for explicit ownership transfer.
    */
-  TagNode(const TagNode &) = default;
+  TagNode(const TagNode &) = delete;
 
   /**
    * Explicitly defaulted move constructor.
@@ -41,9 +42,10 @@ public:
   TagNode(TagNode &&) = default;
 
   /**
-   * Explicitly defaulted copy assignment operator.
+   * Deleted copy assignment operator - prevents accidental shallow copies of
+   * child nodes. Use move semantics for explicit ownership transfer.
    */
-  TagNode &operator=(const TagNode &) = default;
+  TagNode &operator=(const TagNode &) = delete;
 
   /**
    * Explicitly defaulted move assignment operator.
@@ -89,7 +91,12 @@ inline TagNode &operator<<(TagNode &node, INode *ptrNode) {
  */
 inline TagNode &operator<<(TagNode &node, const std::string &withText) {
   TextNode *_ptrNode = new TextNode(withText);
-  node.append(_ptrNode);
+  try {
+    node.append(_ptrNode);
+  } catch (...) {
+    delete _ptrNode;
+    throw;
+  }
   return node;
 }
 } // namespace xtrpg::xml::node

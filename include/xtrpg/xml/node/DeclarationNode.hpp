@@ -27,9 +27,9 @@ public:
   }
 
   /**
-   * Explicitly defaulted copy constructor.
+   * Deleted copy constructor - move-only semantics for consistency and safety.
    */
-  DeclarationNode(const DeclarationNode &) = default;
+  DeclarationNode(const DeclarationNode &) = delete;
 
   /**
    * Explicitly defaulted move constructor.
@@ -37,9 +37,10 @@ public:
   DeclarationNode(DeclarationNode &&) = default;
 
   /**
-   * Explicitly defaulted copy assignment operator.
+   * Deleted copy assignment operator - move-only semantics for consistency and
+   * safety.
    */
-  DeclarationNode &operator=(const DeclarationNode &) = default;
+  DeclarationNode &operator=(const DeclarationNode &) = delete;
 
   /**
    * Explicitly defaulted move assignment operator.

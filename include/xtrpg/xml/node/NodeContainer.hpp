@@ -18,6 +18,14 @@ public:
 
   explicit NodeContainer(NodeType type) : INode(type) {}
 
+  // Delete copy semantics - ownership transfer is explicit via move
+  NodeContainer(const NodeContainer &) = delete;
+  NodeContainer &operator=(const NodeContainer &) = delete;
+
+  // Keep move semantics to allow ownership transfer
+  NodeContainer(NodeContainer &&) = default;
+  NodeContainer &operator=(NodeContainer &&) = default;
+
   ~NodeContainer() {
     for (INode *child : _children) {
       delete child;
@@ -90,7 +98,12 @@ inline NodeContainer &operator<<(NodeContainer &node, INode *child) {
 inline NodeContainer &operator<<(NodeContainer &node,
                                  const std::string &withText) {
   TextNode *_ptrNode = new TextNode(withText);
-  node.append(_ptrNode);
+  try {
+    node.append(_ptrNode);
+  } catch (...) {
+    delete _ptrNode;
+    throw;
+  }
   return node;
 }
 } // namespace xtrpg::xml::node
