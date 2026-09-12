@@ -59,14 +59,12 @@ public:
 
   /**
    * Appends a new TextNode containing the provided string to this container.
-   * Forwarding method to expose NodeContainer's string append overload.
+   * Forwards to NodeContainer's string append overload.
    *
    * @param withText the text content for the new TextNode
    * @throws std::invalid_argument if the text contains invalid XML characters
    */
-  void append(const std::string &withText) {
-    NodeContainer::append(withText);
-  }
+  void append(const std::string &withText) { NodeContainer::append(withText); }
 
   /**
    * Appends a new TagNode with the provided tag name to this container.
