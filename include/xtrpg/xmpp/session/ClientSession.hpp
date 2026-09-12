@@ -3,11 +3,13 @@
 #include <atomic>
 #include <functional>
 #include <mutex>
+#include <sstream>
 #include <string_view>
 #include <utility>
 
 #include "xtrpg/network/TcpConnection.hpp"
 #include "xtrpg/xml/node/DeclarationNode.hpp"
+#include "xtrpg/xml/node/INode.hpp"
 #include "xtrpg/xml/node/TagNode.hpp"
 #include "xtrpg/xml/tokenizer/TokenizationError.hpp"
 #include "xtrpg/xml/tokenizer/XmlStreamTokenizer.hpp"
@@ -57,6 +59,9 @@ public:
 
   /** Asynchronously writes raw XML or other protocol data to the client. */
   void sendRaw(std::string_view data);
+
+  /** Asynchronously writes an XML node to the client. */
+  void send(const xml::node::INode &xmlNode);
 
   /** Handles one token emitted by the XML stream tokenizer. */
   void onXmlToken(const xml::tokenizer::XmlToken &xmlToken);

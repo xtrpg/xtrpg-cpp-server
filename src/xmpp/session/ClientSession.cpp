@@ -53,6 +53,12 @@ void ClientSession::sendRaw(std::string_view data) {
   }
 }
 
+void ClientSession::send(const xml::node::INode &xmlNode) {
+  std::ostringstream oss;
+  oss << xmlNode;
+  this->sendRaw(oss.str());
+}
+
 void ClientSession::process() {
   if (this->_isStopped || this->_isShutdown) {
     return;
@@ -127,24 +133,21 @@ void ClientSession::onXmlToken(const xml::tokenizer::XmlToken &xmlToken) {
     // determine which stream handler to activate
     if (!this->_ptrTcpConnection->isSecure()) {
       // start the negotiation phase
-      // {
-      //   std::lock_guard lock(this->_activeStreamHandlerMutex);
-      //   this->_ptrActiveStreamHandler =
-      //       &stream::NegotiationStreamHandler::instance();
-      // }
-      // this->_ptrActiveStreamHandler->onStart(*this);
-      // return;
+      std::lock_guard lock(this->_activeStreamHandlerMutex);
+      this->_ptrActiveStreamHandler =
+          &stream::NegotiationStreamHandler::instance();
+      this->_ptrActiveStreamHandler->onStart(*this);
+      return;
     }
 
     // if not authenticated
     // start the authentication phase
 
     // start the binded phase
-    {
-      std::lock_guard lock(this->_activeStreamHandlerMutex);
-      this->_ptrActiveStreamHandler =
-          &stream::UnimplementedStreamHandler::instance();
-    }
+    std::lock_guard lock(this->_activeStreamHandlerMutex);
+    this->_ptrActiveStreamHandler =
+        &stream::UnimplementedStreamHandler::instance();
+
     this->_ptrActiveStreamHandler->onStart(*this);
     return;
   }
