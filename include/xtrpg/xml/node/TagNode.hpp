@@ -31,9 +31,10 @@ public:
       : ITagname(name), IAttributes(), NodeContainer(NodeType::TAG) {}
 
   /**
-   * Explicitly defaulted copy constructor.
+   * Deleted copy constructor - prevents accidental shallow copies of child
+   * nodes. Use move semantics for explicit ownership transfer.
    */
-  TagNode(const TagNode &) = default;
+  TagNode(const TagNode &) = delete;
 
   /**
    * Explicitly defaulted move constructor.
@@ -41,9 +42,10 @@ public:
   TagNode(TagNode &&) = default;
 
   /**
-   * Explicitly defaulted copy assignment operator.
+   * Deleted copy assignment operator - prevents accidental shallow copies of
+   * child nodes. Use move semantics for explicit ownership transfer.
    */
-  TagNode &operator=(const TagNode &) = default;
+  TagNode &operator=(const TagNode &) = delete;
 
   /**
    * Explicitly defaulted move assignment operator.
@@ -54,6 +56,41 @@ public:
    * Returns a reference to the name of the tag.
    */
   const std::string_view name() const { return this->getTagname(); }
+
+  /**
+   * Appends a new TagNode with the provided tag name to this container.
+   * The consumer function is called with the new TagNode to allow configuration
+   * before it is appended. This pattern enables fluent, nested construction of
+   * XML trees.
+   *
+   * Exception-safe: if the consumer throws or append fails, the TagNode is
+   * cleaned up before re-throwing the exception.
+   *
+   * @param tagname the name for the new TagNode
+   * @param consumer a callable that accepts a TagNode& for configuration
+   * @throws std::invalid_argument if the tag name is invalid or if the
+   *         consumer throws an exception
+   *
+   * Example usage:
+   * @code
+   * container.append("error", [](TagNode& error) {
+   *   error.append("message", [](TagNode& msg) {
+   *     msg.append("Something went wrong");
+   *   });
+   * });
+   * @endcode
+   */
+  template <typename Consumer>
+  void append(const std::string &tagname, Consumer &&consumer) {
+    TagNode *tagNode = new TagNode(tagname);
+    try {
+      consumer(*tagNode);
+      this->NodeContainer::append(tagNode);
+    } catch (...) {
+      delete tagNode;
+      throw;
+    }
+  }
 
   /**
    * Serializes the node into an XML formatted string.
@@ -78,8 +115,8 @@ private:
 /**
  * Stream operator overload for easy serialization
  */
-inline TagNode &operator<<(TagNode &node, std::shared_ptr<INode> child) {
-  node.append(std::move(child));
+inline TagNode &operator<<(TagNode &node, INode *ptrNode) {
+  node.NodeContainer::append(std::move(ptrNode));
   return node;
 }
 
@@ -88,8 +125,13 @@ inline TagNode &operator<<(TagNode &node, std::shared_ptr<INode> child) {
  * child containing the provided text.
  */
 inline TagNode &operator<<(TagNode &node, const std::string &withText) {
-  auto textNode = std::make_shared<TextNode>(withText);
-  node.append(textNode);
+  TextNode *_ptrNode = new TextNode(withText);
+  try {
+    node.NodeContainer::append(_ptrNode);
+  } catch (...) {
+    delete _ptrNode;
+    throw;
+  }
   return node;
 }
 } // namespace xtrpg::xml::node
