@@ -21,11 +21,11 @@ public:
 
     session.send("stream:error", [](xml::node::TagNode &streamError) {
       streamError.append("internal-server-error", [](xml::node::TagNode &node) {
-        node.setAttribute("xmlns", "urn:ietf:params:xml:ns:xmpp-streams");
+        node.set("xmlns", "urn:ietf:params:xml:ns:xmpp-streams");
       });
       streamError.append("text", [](xml::node::TagNode &node) {
-        node.setAttribute("xmlns", "urn:ietf:params:xml:ns:xmpp-streams");
-        node.setAttribute("xml:lang", "en");
+        node.set("xmlns", "urn:ietf:params:xml:ns:xmpp-streams");
+        node.set("xml:lang", "en");
         node.append("An unexpected error occurred.");
       });
     });
