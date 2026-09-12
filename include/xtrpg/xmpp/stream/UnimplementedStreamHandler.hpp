@@ -1,5 +1,6 @@
 #pragma once
 
+#include "xtrpg/xml/node/TagNode.hpp"
 #include "xtrpg/xmpp/stream/StreamHandler.hpp"
 
 namespace xtrpg::xmpp::stream {
@@ -30,7 +31,7 @@ public:
   }
 
   void onStanza(session::ClientSession &session,
-                const int &stanza) const override {
+                const xml::node::TagNode &stanza) const override {
     // Not implemented
   }
 };

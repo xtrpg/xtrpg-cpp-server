@@ -4,6 +4,7 @@
 #include <string>
 #include <string_view>
 
+#include "xtrpg/xml/node/TagNode.hpp"
 #include "xtrpg/xmpp/session/ClientSession.hpp"
 
 namespace xtrpg::xmpp::stream {
@@ -22,7 +23,7 @@ public:
    * for processing.
    */
   virtual void onStanza(session::ClientSession &clientSession,
-                        const int &stanza) const = 0;
+                        const xml::node::TagNode &stanza) const = 0;
 
   /**
    * Lifecycle hook that is called immediately after a new stream is
