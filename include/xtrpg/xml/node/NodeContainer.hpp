@@ -57,6 +57,26 @@ public:
   }
 
   /**
+   * Appends a new TextNode containing the provided string to this container.
+   * Exception-safe: if append fails, the TextNode is cleaned up before
+   * re-throwing the exception.
+   *
+   * @param withText the text content for the new TextNode
+   * @throws std::invalid_argument if the text contains invalid XML characters
+   *         or if appending would create a cycle (though cycles are not
+   *         possible with newly created TextNodes).
+   */
+  void append(const std::string &withText) {
+    TextNode *_ptrNode = new TextNode(withText);
+    try {
+      this->append(_ptrNode);
+    } catch (...) {
+      delete _ptrNode;
+      throw;
+    }
+  }
+
+  /**
    * Returns a vector of child nodes.
    */
   const std::vector<INode *> &children() const { return this->_children; }

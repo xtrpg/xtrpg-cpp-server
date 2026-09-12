@@ -58,6 +58,41 @@ public:
   const std::string_view name() const { return this->getTagname(); }
 
   /**
+   * Appends a new TagNode with the provided tag name to this container.
+   * The consumer function is called with the new TagNode to allow configuration
+   * before it is appended. This pattern enables fluent, nested construction of
+   * XML trees.
+   *
+   * Exception-safe: if the consumer throws or append fails, the TagNode is
+   * cleaned up before re-throwing the exception.
+   *
+   * @param tagname the name for the new TagNode
+   * @param consumer a callable that accepts a TagNode& for configuration
+   * @throws std::invalid_argument if the tag name is invalid or if the
+   *         consumer throws an exception
+   *
+   * Example usage:
+   * @code
+   * container.append("error", [](TagNode& error) {
+   *   error.append("message", [](TagNode& msg) {
+   *     msg.append("Something went wrong");
+   *   });
+   * });
+   * @endcode
+   */
+  template <typename Consumer>
+  void append(const std::string &tagname, Consumer &&consumer) {
+    TagNode *tagNode = new TagNode(tagname);
+    try {
+      consumer(*tagNode);
+      this->NodeContainer::append(tagNode);
+    } catch (...) {
+      delete tagNode;
+      throw;
+    }
+  }
+
+  /**
    * Serializes the node into an XML formatted string.
    */
   void serialize(std::ostream &os) const override {
@@ -81,7 +116,7 @@ private:
  * Stream operator overload for easy serialization
  */
 inline TagNode &operator<<(TagNode &node, INode *ptrNode) {
-  node.append(std::move(ptrNode));
+  node.NodeContainer::append(std::move(ptrNode));
   return node;
 }
 
@@ -92,7 +127,7 @@ inline TagNode &operator<<(TagNode &node, INode *ptrNode) {
 inline TagNode &operator<<(TagNode &node, const std::string &withText) {
   TextNode *_ptrNode = new TextNode(withText);
   try {
-    node.append(_ptrNode);
+    node.NodeContainer::append(_ptrNode);
   } catch (...) {
     delete _ptrNode;
     throw;
