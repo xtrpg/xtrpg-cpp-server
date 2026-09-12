@@ -58,6 +58,17 @@ public:
   const std::string_view name() const { return this->getTagname(); }
 
   /**
+   * Appends a new TextNode containing the provided string to this container.
+   * Forwarding method to expose NodeContainer's string append overload.
+   *
+   * @param withText the text content for the new TextNode
+   * @throws std::invalid_argument if the text contains invalid XML characters
+   */
+  void append(const std::string &withText) {
+    NodeContainer::append(withText);
+  }
+
+  /**
    * Appends a new TagNode with the provided tag name to this container.
    * The consumer function is called with the new TagNode to allow configuration
    * before it is appended. This pattern enables fluent, nested construction of

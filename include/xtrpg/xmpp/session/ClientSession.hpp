@@ -63,6 +63,13 @@ public:
   /** Asynchronously writes an XML node to the client. */
   void send(const xml::node::INode &xmlNode);
 
+  template <typename Consumer>
+  void send(const std::string &tagname, Consumer &&consumer) {
+    TagNode tagNode(tagname);
+    consumer(tagNode);
+    this->send(tagNode);
+  }
+
   /** Handles one token emitted by the XML stream tokenizer. */
   void onXmlToken(const xml::tokenizer::XmlToken &xmlToken);
 
