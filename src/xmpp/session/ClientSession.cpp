@@ -116,13 +116,18 @@ void ClientSession::onXmlToken(const xml::tokenizer::XmlToken &xmlToken) {
     if (xml::tokenizer::TokenType::OPEN_TAG != xmlToken.type ||
         "stream:stream" != xmlToken.content) {
       // return a malformed xml stream error
-      this->sendRaw(
-          "<stream:stream "
-          "xmlns:stream='http://etherx.jabber.org/"
-          "streams'><stream:error><bad-format "
-          "xmlns='urn:ietf:params:xml:ns:xmpp-streams'/><text "
-          "xmlns='urn:ietf:params:xml:ns:xmpp-streams'>First element must be "
-          "an opening stream header.</text></stream:error></stream:stream>");
+      this->send("stream:stream", [](xml::node::TagNode &node) {
+        node.set("xmlns:stream", "http://etherx.jabber.org/streams");
+        node.append("stream:error", [](xml::node::TagNode &node) {
+          node.append("bad-format", [](xml::node::TagNode &node) {
+            node.set("xmlns", "urn:ietf:params:xml:ns:xmpp-streams");
+          });
+          node.append("text", [](xml::node::TagNode &node) {
+            node.set("xmlns", "urn:ietf:params:xml:ns:xmpp-streams");
+            node.append("First element must be an opening stream handler.");
+          });
+        });
+      });
       this->shutdown();
       return;
     }
@@ -151,6 +156,13 @@ void ClientSession::onXmlToken(const xml::tokenizer::XmlToken &xmlToken) {
   // Are we parsing the root stream:stream node?
   if (nullptr == this->_ptrCurrentXmlNode) {
 
+    // if the incoming token is text content and blank (only contains whitespace
+    // and newlines) or empty then ignore and return immediately.
+    if (xml::tokenizer::TokenType::TEXT_CONTENT == xmlToken.type &&
+        xtrpg::utils::string::isBlank(xmlToken.content)) {
+      return;
+    }
+
     // Are we ending the current stream
     if (xml::tokenizer::TokenType::CLOSE_TAG == xmlToken.type &&
         "stream:stream" == xmlToken.content) {
@@ -159,10 +171,19 @@ void ClientSession::onXmlToken(const xml::tokenizer::XmlToken &xmlToken) {
       return;
     }
 
-    // if (xml::tokenizer::TokenType::EMPTY_TAG != xmlToken.type) {
-    // process the node and dispatch to handler.
-    // return;
-    // }
+    if (xml::tokenizer::TokenType::EMPTY_TAG == xmlToken.type) {
+      // create a new Tag Node with no children.
+      xml::node::TagNode node(xmlToken.content);
+      if (xmlToken.attributes.size() > 0) {
+        for (const auto &[key, value] : xmlToken.attributes) {
+          node.set(key, value);
+        }
+      }
+
+      std::lock_guard lock(this->_activeStreamHandlerMutex);
+      this->_ptrActiveStreamHandler->onStanza(*this, node);
+      return;
+    }
 
     // if (xml::tokenizer::TokenType::OPEN_TAG != xmlToken.type) { malformed
     // stream error close the stream.
@@ -218,6 +239,7 @@ void ClientSession::onXmlToken(const xml::tokenizer::XmlToken &xmlToken) {
         "xmlns='urn:ietf:params:xml:ns:xmpp-streams' xml:lang='en'>Stanza size "
         "limit of 64KB exceeded.</text></stream:error></stream:stream>");
     this->shutdown();
+    return;
   }
 
   std::cout << "UNABLE TO PROCESS INCOMING XML TOKEN" << std::endl;
