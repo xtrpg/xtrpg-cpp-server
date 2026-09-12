@@ -78,8 +78,8 @@ private:
 /**
  * Stream operator overload for easy serialization
  */
-inline TagNode &operator<<(TagNode &node, std::shared_ptr<INode> child) {
-  node.append(std::move(child));
+inline TagNode &operator<<(TagNode &node, INode *ptrNode) {
+  node.append(std::move(ptrNode));
   return node;
 }
 
@@ -88,8 +88,8 @@ inline TagNode &operator<<(TagNode &node, std::shared_ptr<INode> child) {
  * child containing the provided text.
  */
 inline TagNode &operator<<(TagNode &node, const std::string &withText) {
-  auto textNode = std::make_shared<TextNode>(withText);
-  node.append(textNode);
+  TextNode *_ptrNode = new TextNode(withText);
+  node.append(_ptrNode);
   return node;
 }
 } // namespace xtrpg::xml::node
