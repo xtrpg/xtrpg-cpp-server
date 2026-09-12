@@ -23,9 +23,12 @@ public:
         "version='1.0'>");
 
     // request encrypted
-    session.sendRaw("<stream:features><starttls "
-                    "xmlns='urn:ietf:params:xml:ns:xmpp-tls'><required/></"
-                    "starttls></stream:features>");
+    session.send("stream:features", [](xml::node::TagNode &node) {
+      node.append("starttls", [](xml::node::TagNode &node) {
+        node.set("xmlns", "urn:ietf:params:xml:ns:xmpp-tls");
+        node.append("required", nullptr);
+      });
+    });
   }
 
   void onEnd(session::ClientSession &session) const override {
@@ -38,17 +41,24 @@ public:
 
     if ("starttls" != stanza.name()) {
       // Drop unencrypted/unauthorized stanzas sent prior to TLS
-      session.sendRaw(
-          "<stream:error><policy-violation "
-          "xmlns='urn:ietf:params:xml:ns:xmpp-streams'/><text "
-          "xmlns='urn:ietf:params:xml:ns:xmpp-streams' xml:lang='en'>TLS is "
-          "required</text></stream:error>");
+      session.send("stream:error", [](xml::node::TagNode &node) {
+        node.append("policy-violation", [](xml::node::TagNode &node) {
+          node.set("xmlns", "urn:ietf:params:xml:ns:xmpp-streams");
+        });
+        node.append("text", [](xml::node::TagNode &node) {
+          node.set("xmlns", "urn:ietf:params:xml:ns:xmpp-streams");
+          node.set("xml:lang", "en");
+          node.append("TLS is required");
+        });
+      });
       session.shutdown();
       return;
     }
 
     // Confirm TLS proceed stanza
-    session.sendRaw("<proceed xmlns='urn:ietf:params:xml:ns:xmpp-tls'/>");
+    session.send("proceed", [](xml::node::TagNode &node) {
+      node.set("xmlns", "urn:ietf:params:xml:ns:xmpp-tls");
+    });
 
     // Execute async SSL handshake and transition to unauthenticated phase
     // session.upgrade_to_tls([&session]() {

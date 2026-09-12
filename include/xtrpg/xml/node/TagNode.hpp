@@ -102,6 +102,19 @@ public:
   }
 
   /**
+   * Appends a new TagNode with the provided tag name to this container.
+   * This overload accepts nullptr, creating an empty TagNode without calling
+   * a consumer function.
+   *
+   * @param tagname the name for the new TagNode
+   * @param consumer nullptr (consumer not provided)
+   * @throws std::invalid_argument if the tag name is invalid
+   */
+  void append(const std::string &tagname, std::nullptr_t) {
+    this->NodeContainer::append(new TagNode(tagname));
+  }
+
+  /**
    * Serializes the node into an XML formatted string.
    */
   void serialize(std::ostream &os) const override {

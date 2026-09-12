@@ -65,7 +65,7 @@ public:
 
   template <typename Consumer>
   void send(const std::string &tagname, Consumer &&consumer) {
-    TagNode tagNode(tagname);
+    xml::node::TagNode tagNode(tagname);
     consumer(tagNode);
     this->send(tagNode);
   }
