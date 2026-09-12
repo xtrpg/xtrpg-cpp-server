@@ -95,7 +95,6 @@ void ClientSession::onXmlToken(const xml::tokenizer::XmlToken &xmlToken) {
 
   // Ignore any comment tokens
   if (xml::tokenizer::TokenType::COMMENT == xmlToken.type) {
-    std::cout << "Ignoring Comment: " << xmlToken.content << std::endl;
     return;
   }
 
@@ -103,7 +102,6 @@ void ClientSession::onXmlToken(const xml::tokenizer::XmlToken &xmlToken) {
   if (nullptr == this->_ptrActiveStreamHandler) {
     // ignore declaration tokens
     if (xml::tokenizer::TokenType::DECLARATION == xmlToken.type) {
-      std::cout << "Ignoring Declaration: " << xmlToken.content << std::endl;
       return;
     }
 
@@ -111,7 +109,6 @@ void ClientSession::onXmlToken(const xml::tokenizer::XmlToken &xmlToken) {
     // and newlines) or empty then ignore and return immediately.
     if (xml::tokenizer::TokenType::TEXT_CONTENT == xmlToken.type &&
         xtrpg::utils::string::isBlank(xmlToken.content)) {
-      std::cout << "Ignoring Whitespace Text Content." << std::endl;
       return;
     }
 
@@ -147,7 +144,6 @@ void ClientSession::onXmlToken(const xml::tokenizer::XmlToken &xmlToken) {
     std::lock_guard lock(this->_activeStreamHandlerMutex);
     this->_ptrActiveStreamHandler =
         &stream::UnimplementedStreamHandler::instance();
-
     this->_ptrActiveStreamHandler->onStart(*this);
     return;
   }
@@ -223,6 +219,8 @@ void ClientSession::onXmlToken(const xml::tokenizer::XmlToken &xmlToken) {
         "limit of 64KB exceeded.</text></stream:error></stream:stream>");
     this->shutdown();
   }
+
+  std::cout << "UNABLE TO PROCESS INCOMING XML TOKEN" << std::endl;
 }
 
 void ClientSession::onTokenizationError(
