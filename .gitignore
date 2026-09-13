@@ -75,3 +75,8 @@ Testing/
 # IDE Folders
 .idea/
 .vscode/
+
+# AI
+AGENTS.md
+.agents/
+.claude/
