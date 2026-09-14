@@ -75,6 +75,7 @@ Testing/
 # IDE Folders
 .idea/
 .vscode/
+nul
 
 # AI
 AGENTS.md
