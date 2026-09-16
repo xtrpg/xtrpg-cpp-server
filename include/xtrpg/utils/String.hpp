@@ -43,4 +43,8 @@ inline size_t countUtf8CodePoints(const std::string &str) {
   }
   return count;
 }
+
+inline bool isWhitespace(const char character) {
+  return std::isspace(static_cast<unsigned char>(character)) != 0;
+}
 } // namespace xtrpg::utils::string

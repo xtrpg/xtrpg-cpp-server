@@ -3,6 +3,8 @@
 #include <array>
 #include <cctype>
 
+#include "xtrpg/utils/String.hpp"
+
 namespace {
 bool isNameCharacter(const char character) {
   return std::isalnum(static_cast<unsigned char>(character)) != 0 ||
@@ -10,9 +12,6 @@ bool isNameCharacter(const char character) {
          character == '.';
 }
 
-bool isWhitespace(const char character) {
-  return std::isspace(static_cast<unsigned char>(character)) != 0;
-}
 } // namespace
 
 namespace xtrpg::xml::tokenizer {
@@ -98,7 +97,7 @@ void XmlStreamTokenizer::process(std::istream &stream) {
           if (this->_buffer.size() > __TOKENIZER_MAX_BUFFER_SIZE_IN_CHARS) {
             bufferExceeded();
           }
-        } else if (isWhitespace(character)) {
+        } else if (utils::string::isWhitespace(character)) {
           if (this->_buffer.empty()) {
             fail(TokenizationError::MALFORMED_INPUT);
           } else {
@@ -128,7 +127,7 @@ void XmlStreamTokenizer::process(std::istream &stream) {
         }
         break;
       case State::START_TAG_BODY:
-        if (isWhitespace(character)) {
+        if (utils::string::isWhitespace(character)) {
           break;
         }
         if (character == '>') {
@@ -149,7 +148,7 @@ void XmlStreamTokenizer::process(std::istream &stream) {
           if (this->_buffer.size() > __TOKENIZER_MAX_BUFFER_SIZE_IN_CHARS) {
             bufferExceeded();
           }
-        } else if (isWhitespace(character)) {
+        } else if (utils::string::isWhitespace(character)) {
           this->_attributeName = this->_buffer;
           this->_buffer.clear();
           this->_state = State::ATTRIBUTE_AFTER_NAME;
@@ -162,7 +161,7 @@ void XmlStreamTokenizer::process(std::istream &stream) {
         }
         break;
       case State::ATTRIBUTE_AFTER_NAME:
-        if (isWhitespace(character)) {
+        if (utils::string::isWhitespace(character)) {
           break;
         }
         if (character == '=') {
@@ -172,7 +171,7 @@ void XmlStreamTokenizer::process(std::istream &stream) {
         }
         break;
       case State::ATTRIBUTE_VALUE_START:
-        if (isWhitespace(character)) {
+        if (utils::string::isWhitespace(character)) {
           break;
         }
         if (character == '\'' || character == '"') {
@@ -202,7 +201,7 @@ void XmlStreamTokenizer::process(std::istream &stream) {
           if (this->_buffer.size() > __TOKENIZER_MAX_BUFFER_SIZE_IN_CHARS) {
             bufferExceeded();
           }
-        } else if (isWhitespace(character)) {
+        } else if (utils::string::isWhitespace(character)) {
           this->_currentToken.content = this->_buffer;
           this->_buffer.clear();
           this->_state = State::END_TAG_BODY;
@@ -220,7 +219,7 @@ void XmlStreamTokenizer::process(std::istream &stream) {
         }
         break;
       case State::END_TAG_BODY:
-        if (isWhitespace(character)) {
+        if (utils::string::isWhitespace(character)) {
           break;
         }
         if (character == '>') {
@@ -236,7 +235,7 @@ void XmlStreamTokenizer::process(std::istream &stream) {
           if (this->_buffer.size() > __TOKENIZER_MAX_BUFFER_SIZE_IN_CHARS) {
             bufferExceeded();
           }
-        } else if (isWhitespace(character)) {
+        } else if (utils::string::isWhitespace(character)) {
           if (this->_buffer.empty()) {
             fail(TokenizationError::MALFORMED_INPUT);
           } else {
@@ -257,7 +256,7 @@ void XmlStreamTokenizer::process(std::istream &stream) {
         }
         break;
       case State::DECLARATION_BODY:
-        if (isWhitespace(character)) {
+        if (utils::string::isWhitespace(character)) {
           break;
         }
         if (character == '?') {
@@ -275,7 +274,7 @@ void XmlStreamTokenizer::process(std::istream &stream) {
           if (this->_buffer.size() > __TOKENIZER_MAX_BUFFER_SIZE_IN_CHARS) {
             bufferExceeded();
           }
-        } else if (isWhitespace(character)) {
+        } else if (utils::string::isWhitespace(character)) {
           this->_attributeName = this->_buffer;
           this->_buffer.clear();
           this->_state = State::DECLARATION_ATTRIBUTE_AFTER_NAME;
@@ -288,7 +287,7 @@ void XmlStreamTokenizer::process(std::istream &stream) {
         }
         break;
       case State::DECLARATION_ATTRIBUTE_AFTER_NAME:
-        if (isWhitespace(character)) {
+        if (utils::string::isWhitespace(character)) {
           break;
         }
         if (character == '=') {
@@ -298,7 +297,7 @@ void XmlStreamTokenizer::process(std::istream &stream) {
         }
         break;
       case State::DECLARATION_ATTRIBUTE_VALUE_START:
-        if (isWhitespace(character)) {
+        if (utils::string::isWhitespace(character)) {
           break;
         }
         if (character == '\'' || character == '"') {
