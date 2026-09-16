@@ -1,5 +1,8 @@
 #include "xtrpg/xmpp/session/ClientSession.hpp"
 
+#include <iostream>
+
+#include "xtrpg/network/TlsConfig.hpp"
 #include "xtrpg/utils/String.hpp"
 #include "xtrpg/xmpp/stream/NegotiationStreamHandler.hpp"
 #include "xtrpg/xmpp/stream/UnimplementedStreamHandler.hpp"
@@ -15,8 +18,10 @@ ClientSession::~ClientSession() {
   delete this->_ptrRootStreamNode;
   delete this->_ptrDeclarationNode;
   this->_tokenizer.setObserver(nullptr);
-  delete this->_ptrTcpConnection;
+
+  auto *tcpConnection = this->_ptrTcpConnection;
   this->_ptrTcpConnection = nullptr;
+  delete tcpConnection;
 
   if (nullptr != this->_ptrCurrentXmlNode) {
     std::lock_guard lock(this->_currentXmlNodeMutex);
@@ -34,21 +39,31 @@ void ClientSession::start() {
 }
 
 void ClientSession::stop() {
-  if (!this->_isStopped.exchange(true)) {
+  if (!this->_isStopped.exchange(true) && this->_ptrTcpConnection != nullptr) {
     this->_ptrTcpConnection->cancelRead();
   }
 }
 
 void ClientSession::shutdown() {
-  this->stop();
   if (this->_isShutdown.exchange(true)) {
     return;
   }
-  this->_ptrTcpConnection->close([this]() { this->notifyCompletion(); });
+
+  this->stop();
+
+  auto *tcpConnection = this->_ptrTcpConnection;
+  if (tcpConnection == nullptr) {
+    this->notifyCompletion();
+    return;
+  }
+
+  this->_ptrTcpConnection = nullptr;
+  tcpConnection->close([tcpConnection]() { delete tcpConnection; });
+  this->notifyCompletion();
 }
 
 void ClientSession::sendRaw(std::string_view data) {
-  if (!this->_isShutdown) {
+  if (!this->_isShutdown && this->_ptrTcpConnection != nullptr) {
     *this->_ptrTcpConnection << data;
   }
 }
@@ -60,13 +75,17 @@ void ClientSession::send(const xml::node::INode &xmlNode) {
 }
 
 void ClientSession::process() {
-  if (this->_isStopped || this->_isShutdown) {
+  if (this->_isStopped || this->_isShutdown ||
+      this->_ptrTcpConnection == nullptr) {
     return;
   }
   this->_ptrTcpConnection->read(
       [this](const std::error_code &error, std::istream &stream) {
-        if (error || this->_isStopped || this->_isShutdown) {
-          this->notifyCompletion();
+        if (error || this->_isStopped || this->_isShutdown ||
+            this->_ptrTcpConnection == nullptr) {
+          if (!this->_isShutdown && this->_ptrTcpConnection != nullptr) {
+            this->shutdown();
+          }
           return;
         }
         this->_tokenizer.process(stream);
@@ -257,6 +276,42 @@ void ClientSession::setActiveStreamHandler(
 const stream::StreamHandler *ClientSession::getActiveStreamHandler() const {
   std::lock_guard lock(this->_activeStreamHandlerMutex);
   return this->_ptrActiveStreamHandler;
+}
+
+void ClientSession::upgradeTcpConnectionToTls() {
+  const auto &tlsSettings = xtrpg::network::getTlsSettings();
+
+  if (tlsSettings.certPath.empty() || tlsSettings.keyPath.empty()) {
+    std::cerr << "[ERROR] TLS settings are not initialized" << std::endl;
+    this->shutdown();
+    return;
+  }
+
+  try {
+    // Create SSL context configured for TLS server mode. This must stay alive
+    // for the lifetime of the upgraded TLS stream because the async handshake
+    // holds OpenSSL state associated with the context.
+    asio::ssl::context ssl_ctx(asio::ssl::context::tls_server);
+
+    // Set to use TLSv1.2 or higher
+    ssl_ctx.set_options(asio::ssl::context::default_workarounds |
+                        asio::ssl::context::no_sslv2 |
+                        asio::ssl::context::single_dh_use);
+
+    // Load the server certificate
+    ssl_ctx.use_certificate_chain_file(tlsSettings.certPath);
+
+    // Load the private key
+    ssl_ctx.use_private_key_file(tlsSettings.keyPath, asio::ssl::context::pem);
+
+    // Upgrade the TCP connection to TLS. The connection owns the context so it
+    // remains valid while the async handshake is still in flight.
+    this->_ptrTcpConnection->upgrade(std::move(ssl_ctx));
+  } catch (const std::exception &e) {
+    std::cerr << "[ERROR] Failed to upgrade connection to TLS: " << e.what()
+              << std::endl;
+    this->shutdown();
+  }
 }
 
 } // namespace xtrpg::xmpp::session

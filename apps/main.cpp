@@ -1,4 +1,5 @@
 #include <atomic>
+#include <filesystem>
 #include <fstream>
 #include <iostream>
 #include <memory>
@@ -12,6 +13,8 @@
 #include "xtrpg/config/ConfigManager.hpp"
 #include "xtrpg/interface/Observer.hpp"
 #include "xtrpg/network/SocketConnectionListener.hpp"
+#include "xtrpg/network/TlsConfig.hpp"
+#include "xtrpg/network/TlsConfigProvider.hpp"
 #include "xtrpg/xml/tokenizer/XmlStreamTokenizer.hpp"
 #include "xtrpg/xmpp/ClientConnectionManager.hpp"
 #include "xtrpg/xmpp/session/ClientSession.hpp"
@@ -66,6 +69,31 @@ int main(int argc, char *argv[]) {
       configManager.loadTomlFile(configFile);
     }
     configManager.parseCLI(argc, argv);
+
+    // Validate TLS certificate and key files exist before starting server
+    auto certPath = configManager.get<std::string>("tls", "cert_path")
+                        .value_or("./server.crt");
+    auto keyPath = configManager.get<std::string>("tls", "key_path")
+                       .value_or("./server.key");
+
+    if (!std::filesystem::exists(certPath)) {
+      std::cerr << "[ERROR] TLS certificate file not found: " << certPath
+                << std::endl;
+      return 1;
+    }
+
+    if (!std::filesystem::exists(keyPath)) {
+      std::cerr << "[ERROR] TLS key file not found: " << keyPath << std::endl;
+      return 1;
+    }
+
+    std::cout << "[INFO] TLS configuration validated:" << std::endl
+              << "       Certificate: " << certPath << std::endl
+              << "       Key: " << keyPath << std::endl;
+
+    // Initialize the shared TLS settings object during startup.
+    xtrpg::network::initializeTlsSettings(
+        xtrpg::network::TlsSettings{.certPath = certPath, .keyPath = keyPath});
 
     // Initialize Asio IO context for async I/O operations
     asio::io_context ioContext;
@@ -122,11 +150,11 @@ int main(int argc, char *argv[]) {
   } catch (const std::exception &e) {
     std::cerr << "EXCEPTION OCCURRED" << std::endl
               << "Application closing die to \"" << e.what() << "\"."
-              << std ::endl;
+              << std::endl;
     return 1;
   } catch (...) {
     std::cerr << "UNEXPECTED EXCEPTION OCCURRED" << std::endl
-              << "Application closing." << std ::endl;
+              << "Application closing." << std::endl;
     return 1;
   }
 

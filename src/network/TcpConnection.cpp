@@ -13,22 +13,40 @@ void TcpConnection::dispatchCloseCallbacks() {
   }
 }
 
-void TcpConnection::upgrade(asio::ssl::context &ssl_ctx) {
+void TcpConnection::upgrade(asio::ssl::context ssl_ctx) {
   if (!this->isOpen()) {
     return;
   }
 
-  asio::post(*this->_strand, [this, &ssl_ctx]() {
+  asio::post(*this->_strand, [this, ssl_ctx = std::move(ssl_ctx)]() mutable {
     if (this->isClosed() || this->isClosing() || this->isSecure()) {
       return;
     }
 
-    this->_sslStream.emplace(std::move(this->_tcpSocket), ssl_ctx);
+    this->_sslContext.emplace(std::move(ssl_ctx));
+    this->_sslStream.emplace(std::move(this->_tcpSocket), *this->_sslContext);
+    this->_tlsHandshakeInProgress = true;
 
     this->_sslStream->async_handshake(
         asio::ssl::stream_base::server, [this](std::error_code ec) {
+          this->_tlsHandshakeInProgress = false;
+
           if (ec) {
+            if (this->is(ConnectionState::CLOSING)) {
+              this->_sslStream->lowest_layer().close();
+              this->dispatchStateChange(ConnectionState::CLOSED);
+              this->dispatchCloseCallbacks();
+              return;
+            }
+
             this->close();
+            return;
+          }
+
+          if (this->is(ConnectionState::CLOSING)) {
+            this->_sslStream->lowest_layer().close();
+            this->dispatchStateChange(ConnectionState::CLOSED);
+            this->dispatchCloseCallbacks();
             return;
           }
 
@@ -158,6 +176,11 @@ void TcpConnection::close(std::function<void()> callback) {
 
   // Serialize transport shutdown with reads and writes on the strand.
   asio::post(*this->_strand, [this]() {
+    if (this->_tlsHandshakeInProgress && this->_sslStream) {
+      this->_sslStream->lowest_layer().cancel();
+      return;
+    }
+
     if (this->isSecure() && this->_sslStream) {
       this->_sslStream->lowest_layer().cancel();
 

@@ -55,7 +55,10 @@ public:
   void process();
 
   /** Returns whether the owned connection has reached the closed state. */
-  bool isClosed() const { return this->_ptrTcpConnection->isClosed(); }
+  bool isClosed() const {
+    return this->_ptrTcpConnection == nullptr ||
+           this->_ptrTcpConnection->isClosed();
+  }
 
   /** Asynchronously writes raw XML or other protocol data to the client. */
   void sendRaw(std::string_view data);
@@ -88,6 +91,8 @@ public:
   bool hasActiveStreamHandler() const {
     return nullptr != this->_ptrActiveStreamHandler;
   }
+
+  void upgradeTcpConnectionToTls();
 
 private:
   /** TCP connection owned by this session. */

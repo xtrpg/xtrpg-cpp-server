@@ -61,12 +61,7 @@ public:
     });
 
     // Execute async SSL handshake and transition to unauthenticated phase
-    // session.upgrade_to_tls([&session]() {
-    // session.reset_parser();
-    // Transition will wait for the client's post-TLS <stream:stream> header
-    // session.set_state(nullptr); // Waits for next header to instantiate
-    // UnauthenticatedState
-    // });
+    session.upgradeTcpConnectionToTls();
   }
 };
 } // namespace xtrpg::xmpp::stream
