@@ -59,7 +59,7 @@ endif()
 
 # Single executable target
 add_executable(xtrpg_cpp_server
-    apps/main.cpp
+    src/main.cpp
 )
 target_include_directories(xtrpg_cpp_server PRIVATE
     include
