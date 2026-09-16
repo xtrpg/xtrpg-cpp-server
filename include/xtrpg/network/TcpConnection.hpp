@@ -52,9 +52,10 @@ public:
 
   /**
    * Upgrades the TCP connection to a TLS connection using the provided SSL
-   * context.
+   * context. The context is retained by the connection so that the SSL stream
+   * and any pending handshake keep a valid OpenSSL context alive.
    */
-  void upgrade(asio::ssl::context &ssl_ctx);
+  void upgrade(asio::ssl::context ssl_ctx);
 
   /**
    * Async read from the underlying tcp connection, calling the provided lambda
@@ -129,7 +130,6 @@ public:
 
   void
   appendStateChangeCallback(std::function<void(ConnectionState)> callback) {
-    std::cout << "[TcpConnection] Append State Change Callback." << std::endl;
     this->_stateChangeCallbacks.push_back(callback);
   }
 
@@ -163,10 +163,23 @@ private:
   std::optional<asio::strand<asio::any_io_executor>> _strand;
 
   /**
+   * The SSL context used by the TLS stream. It must outlive the stream because
+   * the stream and any queued handshake still reference OpenSSL objects owned
+   * by the context.
+   */
+  std::optional<asio::ssl::context> _sslContext;
+
+  /**
    * The optional SSL stream used for secure communication. It is only
    * initialized when the connection is upgraded to TLS. If the connection is
    * not secure, this will be std::nullopt.
    */
   std::optional<asio::ssl::stream<asio::ip::tcp::socket>> _sslStream;
+
+  /** Tracks whether a TLS handshake is still in flight. This gate prevents
+   * shutdown from issuing async_shutdown against an SSL stream that has not yet
+   * finished negotiating its record layer state.
+   */
+  std::atomic<bool> _tlsHandshakeInProgress{false};
 };
 } // namespace xtrpg::network

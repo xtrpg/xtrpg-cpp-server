@@ -58,6 +58,15 @@ public:
   const std::string_view name() const { return this->getTagname(); }
 
   /**
+   * Appends a new TextNode containing the provided string to this container.
+   * Forwards to NodeContainer's string append overload.
+   *
+   * @param withText the text content for the new TextNode
+   * @throws std::invalid_argument if the text contains invalid XML characters
+   */
+  void append(const std::string &withText) { NodeContainer::append(withText); }
+
+  /**
    * Appends a new TagNode with the provided tag name to this container.
    * The consumer function is called with the new TagNode to allow configuration
    * before it is appended. This pattern enables fluent, nested construction of
@@ -90,6 +99,19 @@ public:
       delete tagNode;
       throw;
     }
+  }
+
+  /**
+   * Appends a new TagNode with the provided tag name to this container.
+   * This overload accepts nullptr, creating an empty TagNode without calling
+   * a consumer function.
+   *
+   * @param tagname the name for the new TagNode
+   * @param consumer nullptr (consumer not provided)
+   * @throws std::invalid_argument if the tag name is invalid
+   */
+  void append(const std::string &tagname, std::nullptr_t) {
+    this->NodeContainer::append(new TagNode(tagname));
   }
 
   /**

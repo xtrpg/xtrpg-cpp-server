@@ -3,16 +3,22 @@
 #include <atomic>
 #include <functional>
 #include <mutex>
+#include <sstream>
 #include <string_view>
 #include <utility>
 
 #include "xtrpg/network/TcpConnection.hpp"
 #include "xtrpg/xml/node/DeclarationNode.hpp"
+#include "xtrpg/xml/node/INode.hpp"
 #include "xtrpg/xml/node/TagNode.hpp"
 #include "xtrpg/xml/tokenizer/TokenizationError.hpp"
 #include "xtrpg/xml/tokenizer/XmlStreamTokenizer.hpp"
 #include "xtrpg/xml/tokenizer/XmlToken.hpp"
 #include "xtrpg/xml/tokenizer/XmlTokenListener.hpp"
+
+namespace xtrpg::xmpp::stream {
+class StreamHandler;
+}
 
 namespace xtrpg::xmpp::session {
 
@@ -25,10 +31,7 @@ public:
    * @param tcpConnection connection transferred to the new session; must not
    * be null
    */
-  explicit ClientSession(network::TcpConnection *tcpConnection)
-      : _ptrTcpConnection(tcpConnection) {
-    this->_tokenizer.setObserver(this);
-  }
+  explicit ClientSession(network::TcpConnection *tcpConnection);
 
   /** Stops token processing and releases the owned connection and XML state. */
   ~ClientSession();
@@ -52,16 +55,44 @@ public:
   void process();
 
   /** Returns whether the owned connection has reached the closed state. */
-  bool isClosed() const { return this->_ptrTcpConnection->isClosed(); }
+  bool isClosed() const {
+    return this->_ptrTcpConnection == nullptr ||
+           this->_ptrTcpConnection->isClosed();
+  }
 
   /** Asynchronously writes raw XML or other protocol data to the client. */
   void sendRaw(std::string_view data);
+
+  /** Asynchronously writes an XML node to the client. */
+  void send(const xml::node::INode &xmlNode);
+
+  template <typename Consumer>
+  void send(const std::string &tagname, Consumer &&consumer) {
+    xml::node::TagNode tagNode(tagname);
+    consumer(tagNode);
+    this->send(tagNode);
+  }
 
   /** Handles one token emitted by the XML stream tokenizer. */
   void onXmlToken(const xml::tokenizer::XmlToken &xmlToken);
 
   /** Handles a tokenizer error reported for this client stream. */
   void onTokenizationError(const xml::tokenizer::TokenizationError &error);
+
+  /** Replaces the non-owning active stream handler; nullptr clears it. */
+  void setActiveStreamHandler(const stream::StreamHandler *streamHandler);
+
+  /** Returns a snapshot of the non-owning active stream handler. */
+  const stream::StreamHandler *getActiveStreamHandler() const;
+
+  /**
+   * Returns whether the active stream handler has been defined or not.
+   */
+  bool hasActiveStreamHandler() const {
+    return nullptr != this->_ptrActiveStreamHandler;
+  }
+
+  void upgradeTcpConnectionToTls();
 
 private:
   /** TCP connection owned by this session. */
@@ -88,6 +119,14 @@ private:
 
   /** Ensures completion is reported at most once. */
   std::atomic<bool> _completionNotified{false};
+
+  /** Protects the active stream handler while it is being accessed. */
+  mutable std::mutex _activeStreamHandlerMutex;
+  const stream::StreamHandler *_ptrActiveStreamHandler = nullptr;
+
+  /** Protects the active xml node while it is being accessed. */
+  mutable std::mutex _currentXmlNodeMutex;
+  const xml::node::TagNode *_ptrCurrentXmlNode = nullptr;
 
   /** Notifies the manager that the session has completed. */
   void notifyCompletion();

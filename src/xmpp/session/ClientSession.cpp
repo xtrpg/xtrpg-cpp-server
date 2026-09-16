@@ -1,13 +1,33 @@
 #include "xtrpg/xmpp/session/ClientSession.hpp"
 
+#include <iostream>
+
+#include "xtrpg/network/TlsConfig.hpp"
+#include "xtrpg/utils/String.hpp"
+#include "xtrpg/xmpp/stream/NegotiationStreamHandler.hpp"
+#include "xtrpg/xmpp/stream/UnimplementedStreamHandler.hpp"
+
 namespace xtrpg::xmpp::session {
+
+ClientSession::ClientSession(network::TcpConnection *tcpConnection)
+    : _ptrTcpConnection(tcpConnection) {
+  this->_tokenizer.setObserver(this);
+}
 
 ClientSession::~ClientSession() {
   delete this->_ptrRootStreamNode;
   delete this->_ptrDeclarationNode;
   this->_tokenizer.setObserver(nullptr);
-  delete this->_ptrTcpConnection;
+
+  auto *tcpConnection = this->_ptrTcpConnection;
   this->_ptrTcpConnection = nullptr;
+  delete tcpConnection;
+
+  if (nullptr != this->_ptrCurrentXmlNode) {
+    std::lock_guard lock(this->_currentXmlNodeMutex);
+    delete this->_ptrCurrentXmlNode;
+    this->_ptrCurrentXmlNode = nullptr;
+  }
 }
 
 void ClientSession::start() {
@@ -19,33 +39,53 @@ void ClientSession::start() {
 }
 
 void ClientSession::stop() {
-  if (!this->_isStopped.exchange(true)) {
+  if (!this->_isStopped.exchange(true) && this->_ptrTcpConnection != nullptr) {
     this->_ptrTcpConnection->cancelRead();
   }
 }
 
 void ClientSession::shutdown() {
-  this->stop();
   if (this->_isShutdown.exchange(true)) {
     return;
   }
-  this->_ptrTcpConnection->close([this]() { this->notifyCompletion(); });
+
+  this->stop();
+
+  auto *tcpConnection = this->_ptrTcpConnection;
+  if (tcpConnection == nullptr) {
+    this->notifyCompletion();
+    return;
+  }
+
+  this->_ptrTcpConnection = nullptr;
+  tcpConnection->close([tcpConnection]() { delete tcpConnection; });
+  this->notifyCompletion();
 }
 
 void ClientSession::sendRaw(std::string_view data) {
-  if (!this->_isShutdown) {
+  if (!this->_isShutdown && this->_ptrTcpConnection != nullptr) {
     *this->_ptrTcpConnection << data;
   }
 }
 
+void ClientSession::send(const xml::node::INode &xmlNode) {
+  std::ostringstream oss;
+  oss << xmlNode;
+  this->sendRaw(oss.str());
+}
+
 void ClientSession::process() {
-  if (this->_isStopped || this->_isShutdown) {
+  if (this->_isStopped || this->_isShutdown ||
+      this->_ptrTcpConnection == nullptr) {
     return;
   }
   this->_ptrTcpConnection->read(
       [this](const std::error_code &error, std::istream &stream) {
-        if (error || this->_isStopped || this->_isShutdown) {
-          this->notifyCompletion();
+        if (error || this->_isStopped || this->_isShutdown ||
+            this->_ptrTcpConnection == nullptr) {
+          if (!this->_isShutdown && this->_ptrTcpConnection != nullptr) {
+            this->shutdown();
+          }
           return;
         }
         this->_tokenizer.process(stream);
@@ -68,6 +108,146 @@ void ClientSession::notifyCompletion() {
 }
 
 void ClientSession::onXmlToken(const xml::tokenizer::XmlToken &xmlToken) {
+
+  std::cout << "Incoming XML Token" << std::endl;
+  std::cout << "          Content: " << xmlToken.content << std::endl;
+
+  // Ignore any comment tokens
+  if (xml::tokenizer::TokenType::COMMENT == xmlToken.type) {
+    return;
+  }
+
+  // Are we waiting for the client to start a new stream?
+  if (nullptr == this->_ptrActiveStreamHandler) {
+    // ignore declaration tokens
+    if (xml::tokenizer::TokenType::DECLARATION == xmlToken.type) {
+      return;
+    }
+
+    // if the incoming token is text content and blank (only contains whitespace
+    // and newlines) or empty then ignore and return immediately.
+    if (xml::tokenizer::TokenType::TEXT_CONTENT == xmlToken.type &&
+        xtrpg::utils::string::isBlank(xmlToken.content)) {
+      return;
+    }
+
+    // if it's not an opening tag, then it's not the start of a stream
+    if (xml::tokenizer::TokenType::OPEN_TAG != xmlToken.type ||
+        "stream:stream" != xmlToken.content) {
+      // return a malformed xml stream error
+      this->send("stream:stream", [](xml::node::TagNode &node) {
+        node.set("xmlns:stream", "http://etherx.jabber.org/streams");
+        node.append("stream:error", [](xml::node::TagNode &node) {
+          node.append("bad-format", [](xml::node::TagNode &node) {
+            node.set("xmlns", "urn:ietf:params:xml:ns:xmpp-streams");
+          });
+          node.append("text", [](xml::node::TagNode &node) {
+            node.set("xmlns", "urn:ietf:params:xml:ns:xmpp-streams");
+            node.append("First element must be an opening stream handler.");
+          });
+        });
+      });
+      this->shutdown();
+      return;
+    }
+
+    // determine which stream handler to activate
+    if (!this->_ptrTcpConnection->isSecure()) {
+      // start the negotiation phase
+      std::lock_guard lock(this->_activeStreamHandlerMutex);
+      this->_ptrActiveStreamHandler =
+          &stream::NegotiationStreamHandler::instance();
+      this->_ptrActiveStreamHandler->onStart(*this);
+      return;
+    }
+
+    // if not authenticated
+    // start the authentication phase
+
+    // start the binded phase
+    std::lock_guard lock(this->_activeStreamHandlerMutex);
+    this->_ptrActiveStreamHandler =
+        &stream::UnimplementedStreamHandler::instance();
+    this->_ptrActiveStreamHandler->onStart(*this);
+    return;
+  }
+
+  // Are we parsing the root stream:stream node?
+  if (nullptr == this->_ptrCurrentXmlNode) {
+
+    // if the incoming token is text content and blank (only contains whitespace
+    // and newlines) or empty then ignore and return immediately.
+    if (xml::tokenizer::TokenType::TEXT_CONTENT == xmlToken.type &&
+        xtrpg::utils::string::isBlank(xmlToken.content)) {
+      return;
+    }
+
+    // Are we ending the current stream
+    if (xml::tokenizer::TokenType::CLOSE_TAG == xmlToken.type &&
+        "stream:stream" == xmlToken.content) {
+      this->sendRaw("</stream:stream>");
+      this->setActiveStreamHandler(nullptr);
+      return;
+    }
+
+    if (xml::tokenizer::TokenType::EMPTY_TAG == xmlToken.type) {
+      // create a new Tag Node with no children.
+      xml::node::TagNode node(xmlToken.content);
+      if (xmlToken.attributes.size() > 0) {
+        for (const auto &[key, value] : xmlToken.attributes) {
+          node.set(key, value);
+        }
+      }
+
+      std::lock_guard lock(this->_activeStreamHandlerMutex);
+      this->_ptrActiveStreamHandler->onStanza(*this, node);
+      return;
+    }
+
+    // if (xml::tokenizer::TokenType::OPEN_TAG != xmlToken.type) { malformed
+    // stream error close the stream.
+    // return;
+    // }
+
+    // create the new xml node.
+    // return;
+  }
+
+  // From here on down we are parsing a node
+
+  if (xml::tokenizer::TokenType::CLOSE_TAG == xmlToken.type) {
+    // if the current node != this close tag:
+    // - then return a malformed error and close stream.
+    // - return
+
+    // if the current node does not have a parent node (ie parent == nullptr)
+    // - then dispatch the current node to the handler
+    // - set current node to nullptr
+    // - return
+
+    // set the parent of the current node to be the new current node.
+    // return
+  }
+
+  if (xml::tokenizer::TokenType::EMPTY_TAG == xmlToken.type) {
+    // append an empty node to the current node.
+    // return
+  }
+
+  if (xml::tokenizer::TokenType::TEXT_CONTENT == xmlToken.type) {
+    // append text content to the current node
+    // return
+  }
+
+  if (xml::tokenizer::TokenType::OPEN_TAG == xmlToken.type) {
+    // create a new node
+    // append the new node to the current node
+    // set the current node to be the new node
+    // return
+  }
+
+  // return a malformed XML stream.
+
   if (xml::tokenizer::TokenType::OPEN_TAG == xmlToken.type &&
       "stream:stream" == xmlToken.content) {
     this->sendRaw(
@@ -78,10 +258,60 @@ void ClientSession::onXmlToken(const xml::tokenizer::XmlToken &xmlToken) {
         "xmlns='urn:ietf:params:xml:ns:xmpp-streams' xml:lang='en'>Stanza size "
         "limit of 64KB exceeded.</text></stream:error></stream:stream>");
     this->shutdown();
+    return;
   }
+
+  std::cout << "UNABLE TO PROCESS INCOMING XML TOKEN" << std::endl;
 }
 
 void ClientSession::onTokenizationError(
     const xml::tokenizer::TokenizationError &error) {}
+
+void ClientSession::setActiveStreamHandler(
+    const stream::StreamHandler *streamHandler) {
+  std::lock_guard lock(this->_activeStreamHandlerMutex);
+  this->_ptrActiveStreamHandler = streamHandler;
+}
+
+const stream::StreamHandler *ClientSession::getActiveStreamHandler() const {
+  std::lock_guard lock(this->_activeStreamHandlerMutex);
+  return this->_ptrActiveStreamHandler;
+}
+
+void ClientSession::upgradeTcpConnectionToTls() {
+  const auto &tlsSettings = xtrpg::network::getTlsSettings();
+
+  if (tlsSettings.certPath.empty() || tlsSettings.keyPath.empty()) {
+    std::cerr << "[ERROR] TLS settings are not initialized" << std::endl;
+    this->shutdown();
+    return;
+  }
+
+  try {
+    // Create SSL context configured for TLS server mode. This must stay alive
+    // for the lifetime of the upgraded TLS stream because the async handshake
+    // holds OpenSSL state associated with the context.
+    asio::ssl::context ssl_ctx(asio::ssl::context::tls_server);
+
+    // Set to use TLSv1.2 or higher
+    ssl_ctx.set_options(asio::ssl::context::default_workarounds |
+                        asio::ssl::context::no_sslv2 |
+                        asio::ssl::context::single_dh_use);
+
+    // Load the server certificate
+    ssl_ctx.use_certificate_chain_file(tlsSettings.certPath);
+
+    // Load the private key
+    ssl_ctx.use_private_key_file(tlsSettings.keyPath, asio::ssl::context::pem);
+
+    // Upgrade the TCP connection to TLS. The connection owns the context so it
+    // remains valid while the async handshake is still in flight.
+    this->_ptrTcpConnection->upgrade(std::move(ssl_ctx));
+  } catch (const std::exception &e) {
+    std::cerr << "[ERROR] Failed to upgrade connection to TLS: " << e.what()
+              << std::endl;
+    this->shutdown();
+  }
+}
 
 } // namespace xtrpg::xmpp::session
